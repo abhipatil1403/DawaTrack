@@ -1,0 +1,2156 @@
+:root {
+    --primary-color: #00b6db;
+    --background-color: #161616;
+    --text-color: #ffffff;
+    --card-bg: #242424;
+    --hover-color: #008db0;
+    --input-bg: #2a2a2a;
+    --border-color: #333;
+    --danger-color: #dc3545;
+    --danger-hover-color: #c82333;
+    --success-color: #28a745;
+    --success-hover-color: #218838;
+    --text-light: white;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    min-height: 100vh;
+}
+
+/* Header Styles */
+header {
+    background-color: var(--card-bg);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    animation: slideDown 0.5s ease;
+    position: relative;
+    z-index: 1000;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo-img {
+    height: 30px;
+    width: auto;
+}
+
+.logo span {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: white;
+}
+
+.user-profile i {
+    font-size: 2rem;
+    color: var(--primary-color);
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.user-profile i:hover {
+    transform: scale(1.1);
+}
+
+/* Profile Modal Styles */
+.profile-details {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    margin-top: 1.5rem;
+}
+
+.profile-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    width: 100%;
+}
+
+.profile-field label {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.profile-field input,
+.profile-field select {
+    padding: 0.8rem;
+    border: 1px solid #333;
+    border-radius: 6px;
+    background-color: #2a2a2a;
+    color: var(--text-color);
+    font-size: 1rem;
+    max-width: 100%;
+}
+
+.profile-field input:focus,
+.profile-field select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+/* Number input styles */
+.profile-field input[type="number"] {
+    color: var(--text-color);
+}
+
+/* Remove number input spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* Remove any custom controls */
+.number-controls, 
+.custom-controls {
+    display: none !important;
+}
+
+/* Select styles */
+.profile-field select,
+#expiryForm select {
+    padding: 0.8rem;
+    border: 1px solid #333;
+    border-radius: 6px;
+    background-color: #2a2a2a;
+    color: var(--text-color);
+    font-size: 1rem;
+    width: 100%;
+    cursor: pointer;
+    max-height: 300px;
+}
+
+/* Force dropdown to open below */
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='%2300b6db'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.8rem center;
+    padding-right: 2.5rem;
+    position: relative;
+}
+
+/* Style the select options container */
+select:not([size]):not([multiple]) {
+    background-color: #2a2a2a;
+}
+
+select option,
+select optgroup {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    padding: 0.8rem;
+    background-color: #2a2a2a;
+}
+
+/* Ensure proper stacking context */
+#expiryForm {
+    position: relative;
+    z-index: 0;
+    overflow: visible;
+}
+
+#expiryForm select {
+    position: relative;
+    z-index: 1;
+}
+
+/* Dropdown container styles */
+select optgroup,
+select option {
+    max-height: none;
+    overflow-y: auto;
+    border: 1px solid #333;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+select optgroup:first-of-type {
+    border-top: 1px solid #333;
+}
+
+/* Optgroup and option styles */
+optgroup {
+    color: var(--primary-color);
+    font-weight: 600;
+    font-style: normal;
+    padding: 0.5rem 0;
+    background-color: #1a1a1a;
+    border-bottom: 1px solid #333;
+}
+
+optgroup:last-child {
+    border-bottom: none;
+}
+
+option {
+    color: var(--text-color);
+    padding: 0.8rem;
+    background-color: #2a2a2a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+option:hover,
+option:focus {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Style the select when opened */
+select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 182, 219, 0.2);
+}
+
+/* Dropdown arrow color */
+select::-ms-expand {
+    color: var(--primary-color);
+}
+
+/* Medicine type select specific styles */
+.medicine-type-select {
+    position: relative !important;
+}
+
+.medicine-type-select option,
+.medicine-type-select optgroup {
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin-top: 2px !important;
+}
+
+/* Override any browser default behavior */
+.medicine-type-select,
+.medicine-type-select * {
+    transform: none !important;
+}
+
+/* Medicine type dropdown styles */
+#medicineType {
+    padding: 0.8rem;
+    width: 100%;
+    background-color: #2a2a2a;
+    color: var(--text-color);
+    border: 1px solid #333;
+    border-radius: 6px;
+    font-size: 1rem;
+    margin-top: 0.25rem;
+}
+
+/* Hide dropdown scrollbar */
+select#medicineType {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+select#medicineType::-webkit-scrollbar {
+    width: 0 !important;
+    display: none !important;
+}
+
+/* Style dropdown list */
+#medicineType option,
+#medicineType optgroup {
+    background-color: #2a2a2a;
+    color: var(--text-color);
+    padding: 0.8rem;
+}
+
+#medicineType optgroup {
+    font-weight: bold;
+    color: var(--primary-color);
+    background-color: #222;
+}
+
+/* Custom dropdown arrow */
+#medicineType {
+    appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="6"><path d="M0 0l6 6 6-6z" fill="%2300b6db"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+}
+
+/* Focus and hover states */
+#medicineType:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 182, 219, 0.2);
+}
+
+#medicineType option:hover,
+#medicineType option:focus {
+    background-color: var(--primary-color);
+    color: #fff;
+}
+
+/* Ensure webkit browsers hide scrollbar */
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+    select#medicineType {
+        overflow: hidden !important;
+    }
+    
+    select#medicineType::-webkit-scrollbar {
+        width: 0 !important;
+        height: 0 !important;
+        background: transparent !important;
+    }
+}
+
+/* Firefox specific */
+@-moz-document url-prefix() {
+    select#medicineType {
+        overflow-y: auto;
+        scrollbar-width: none;
+    }
+}
+
+/* Form field styles */
+.form-field {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.form-field label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+    font-size: 0.95rem;
+}
+
+/* Reminder preferences styles */
+.reminder-preferences {
+    margin-top: 2rem;
+}
+
+.reminder-preferences h3 {
+    margin-bottom: 1rem;
+    color: var(--text-color);
+    font-size: 1.1rem;
+}
+
+.reminder-preferences select {
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.reminder-preferences select option {
+    padding: 1rem;
+    line-height: 1.5;
+    min-height: 3rem;
+}
+
+/* Ensure proper spacing in dropdowns */
+select option {
+    padding: 1rem;
+    min-height: 3rem;
+    line-height: 1.5;
+}
+
+select:not([multiple]) option {
+    margin: 0.5rem 0;
+}
+
+/* Custom dropdown arrow spacing */
+select {
+    padding-right: 3rem !important;
+    background-position: right 1rem center !important;
+}
+
+/* Main Content Styles */
+main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.search-section {
+    text-align: center;
+    margin-bottom: 3rem;
+    animation: fadeIn 0.8s ease;
+}
+
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--primary-color);
+}
+
+.search-container {
+    display: flex;
+    max-width: 600px;
+    margin: 0 auto;
+    gap: 1rem;
+}
+
+.search-container input {
+    flex: 1;
+    padding: 1rem;
+    border: none;
+    border-radius: 8px;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    font-size: 1rem;
+}
+
+.search-container button {
+    padding: 0 1.5rem;
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.search-container button:hover {
+    background-color: var(--hover-color);
+}
+
+/* Reminder Cards */
+.reminders-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    animation: fadeIn 1s ease;
+}
+
+.reminder-card {
+    background-color: var(--card-bg);
+    padding: 2rem;
+    border-radius: 12px;
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.reminder-card:hover {
+    transform: translateY(-5px);
+}
+
+.reminder-card h2 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+}
+
+.set-reminder-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.set-reminder-btn i {
+    font-size: 1rem;
+}
+
+.set-reminder-btn:hover {
+    background-color: var(--hover-color);
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 2000;
+    overflow-y: auto;
+    padding: 20px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* Add this class when showing the modal */
+.modal.show {
+    opacity: 1;
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    margin: 2rem auto;
+    padding: 2rem;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 800px;
+    position: relative;
+    max-height: 85vh;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transform: translateY(20px);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Add this class when showing the modal */
+.modal.show .modal-content {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+/* Update keyframes for modal animations */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modalSlideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Specific width for prescription modal */
+#prescriptionModal .modal-content {
+    max-width: 1200px;
+}
+
+/* Keep the medicine item grid layout only in prescription modal */
+#prescriptionModal .medicine-item {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr) auto;
+    gap: 20px;
+}
+
+/* Regular layout for other modals */
+#expiryModal .medicine-item,
+#checkupModal .medicine-item {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Medicine List Styles */
+.medicine-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin: 20px 0;
+    width: 100%;
+}
+
+/* Medicine item grid layout */
+.medicine-item {
+    display: grid;
+    grid-template-columns: 1.5fr 0.5fr 1fr 1fr 1.5fr auto;
+    gap: 20px;
+    align-items: start;
+    padding: 20px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+}
+
+/* Form group styles within medicine items */
+.medicine-item .form-group {
+    margin-bottom: 0;
+    min-width: 0;
+}
+
+/* Input and select styles within medicine items */
+.medicine-item .form-group input,
+.medicine-item .form-group select {
+    width: 100%;
+    min-width: 0;
+}
+
+/* Specific width for time inputs */
+.medicine-item .form-group input[type="time"],
+.medicine-item .form-group input[type="datetime-local"] {
+    width: 100%;
+    min-width: 120px;
+}
+
+/* Remove button alignment */
+.medicine-item .remove-medicine-btn {
+    align-self: flex-start;
+    margin-top: 24px;
+    height: 37px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .medicine-item {
+        grid-template-columns: 1.5fr 0.5fr 1fr auto;
+        gap: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .medicine-item {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .medicine-item .remove-medicine-btn {
+        margin-top: 10px;
+        width: fit-content;
+    }
+}
+
+.medicine-item input,
+.medicine-item select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+}
+
+.medicine-item input[type="time"] {
+    width: auto;
+    min-width: 120px;
+}
+
+.remove-medicine-btn {
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.remove-medicine-btn:hover {
+    background-color: #ff3333;
+}
+
+.remove-medicine-btn i {
+    font-size: 1rem;
+}
+
+/* Form Fields */
+.form-field {
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+.form-field label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.form-field input,
+.form-field select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+}
+
+/* Reminder Preferences */
+.reminder-preferences {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: var(--input-bg);
+    border-radius: 6px;
+}
+
+.reminder-preferences h3 {
+    margin-bottom: 15px;
+    font-size: 16px;
+    color: var(--text-color);
+}
+
+/* File Upload Container */
+.file-upload-container {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.upload-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    margin-right: 0.8rem;
+}
+
+.upload-btn i {
+    font-size: 0.9rem;
+}
+
+.upload-btn:hover {
+    background-color: var(--hover-color);
+}
+
+.file-info {
+    display: none;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.5rem;
+    border-radius: 6px;
+    flex: 1;
+    margin: 0;
+}
+
+.file-name {
+    color: var(--text-color);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.view-image {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.view-image:hover {
+    background-color: var(--hover-color);
+}
+
+.remove-image {
+    background-color: var(--danger-color);
+    border: none;
+    border-radius: 4px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    flex-shrink: 0;
+}
+
+.remove-image:hover {
+    background-color: #ff3333;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .medicine-item {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .medicine-item input[type="time"] {
+        width: 100%;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 10px auto;
+        padding: 15px;
+    }
+}
+
+/* Add/Remove Medicine Buttons */
+.add-medicine {
+    background-color: var(--success-color);
+    color: var(--text-light);
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.add-medicine:hover {
+    background-color: var(--success-hover-color);
+}
+
+.remove-medicine {
+    color: var(--danger-color);
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+}
+
+.remove-medicine:hover {
+    color: var(--danger-hover-color);
+}
+
+/* Scrollbar Styles */
+.modal-content::-webkit-scrollbar-track {
+    background: #1a1a1a;
+    border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+    background: var(--hover-color);
+}
+
+.close {
+    position: absolute;
+    right: 1.5rem;
+    top: 1rem;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-color);
+}
+
+/* Form Styles */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+input, select {
+    padding: 0.8rem;
+    border: 1px solid #333;
+    border-radius: 6px;
+    background-color: #2a2a2a;
+    color: var(--text-color);
+}
+
+.file-upload {
+    background-color: #2a2a2a;
+    padding: 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.file-upload-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.upload-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background-color: #2a2a2a;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    width: 100%;
+}
+
+.file-name {
+    color: var(--text-color);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.view-image {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease;
+}
+
+.view-image:hover {
+    background-color: var(--hover-color);
+}
+
+.remove-image {
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: 4px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.remove-image:hover {
+    background-color: var(--hover-color);
+}
+
+.image-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.image-modal img {
+    max-width: 80%;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: 8px;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.image-modal.show {
+    opacity: 1;
+}
+
+.image-modal.show img {
+    transform: scale(1);
+}
+
+.close-image-modal {
+    position: absolute;
+    right: 1.5rem;
+    top: 1rem;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-color);
+    z-index: 1001;
+}
+
+.medicine-item {
+    display: flex;
+    gap: 1rem;
+}
+
+.add-medicine {
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+form button[type="submit"] {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+    width: fit-content;
+    align-self: center;
+    margin-top: 1rem;
+}
+
+.save-profile-btn {
+    display: block;
+    margin: 1.5rem auto;
+    width: fit-content;
+}
+
+form button[type="submit"]:hover {
+    background-color: var(--hover-color);
+}
+
+/* Date and time input styles */
+input[type="datetime-local"],
+input[type="date"],
+input[type="time"] {
+    background-color: #2a2a2a;
+    color: var(--text-color);
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 0.8rem;
+    width: 100%;
+    font-size: 1rem;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Calendar and time picker icon */
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) sepia(100%) saturate(10000%) hue-rotate(175deg);
+    cursor: pointer;
+    opacity: 0.8;
+    padding: 0.5rem;
+    margin-right: -0.5rem;
+}
+
+/* Focus states */
+input[type="datetime-local"]:focus,
+input[type="date"]:focus,
+input[type="time"]:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 182, 219, 0.2);
+}
+
+/* Custom time input specific styles */
+.custom-time {
+    display: none;
+    margin-top: 1rem;
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    transition: all 0.3s ease;
+}
+
+.custom-time[style*="display: block"] {
+    animation: fadeIn 0.3s ease;
+    display: block !important;
+    opacity: 1;
+}
+
+/* Form field wrapper for date/time */
+.form-field.datetime-field {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.form-field.datetime-field label {
+    color: var(--text-color);
+    opacity: 0.9;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+/* Placeholder text color */
+input[type="datetime-local"]::placeholder,
+input[type="date"]::placeholder,
+input[type="time"]::placeholder {
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+/* Ensure consistent spacing */
+#expiryForm input,
+#expiryForm select,
+#expiryForm .form-field {
+    margin-bottom: 1rem;
+}
+
+/* Google Places Autocomplete styles */
+.pac-container {
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 5px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.pac-item {
+    padding: 0.8rem;
+    color: var(--text-color);
+    border-top: 1px solid #444;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.pac-item:first-child {
+    border-top: none;
+}
+
+.pac-item:hover {
+    background-color: rgba(0, 182, 219, 0.1);
+}
+
+.pac-item-selected {
+    background-color: rgba(0, 182, 219, 0.2);
+}
+
+.pac-icon {
+    filter: invert(1) sepia(100%) saturate(10000%) hue-rotate(175deg);
+    opacity: 0.7;
+    margin-right: 0.8rem;
+}
+
+.pac-item-query {
+    color: var(--text-color);
+    font-size: 1rem;
+    padding-right: 0.5rem;
+}
+
+.pac-matched {
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.pac-description {
+    color: var(--text-color);
+    opacity: 0.7;
+    font-size: 0.9rem;
+}
+
+/* Location input specific styles */
+#location {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="%2300b6db"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 0.8rem center;
+    background-size: 1.2rem;
+    padding-right: 2.5rem;
+}
+
+#location:focus {
+    background-image: none;
+}
+
+/* Animations */
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    main {
+        padding: 1rem;
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    .modal-content {
+        margin: 10% auto;
+        width: 95%;
+    }
+
+    .medicine-item {
+        flex-direction: column;
+    }
+}
+
+/* Modal heading styles */
+.modal-content h2 {
+    text-align: center;
+    color: var(--text-color);
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--primary-color);
+    position: relative;
+}
+
+/* Additional spacing for specific headings */
+.set-reminder {
+    margin-bottom: 1.5rem;
+}
+
+/* Plus and Minus button styles */
+.add-medicine,
+.remove-medicine {
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.add-medicine {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.remove-medicine {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.add-medicine:hover {
+    background-color: var(--hover-color);
+    transform: scale(1.1);
+}
+
+.remove-medicine:hover {
+    background-color: var(--danger-hover-color);
+    transform: scale(1.1);
+}
+
+.add-medicine i,
+.remove-medicine i {
+    font-size: 1.2rem;
+    color: white;
+}
+
+.medicine-item {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.medicine-item input,
+.medicine-item select {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+}
+
+.medicine-item input:focus,
+.medicine-item select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+/* Delete profile and logout buttons */
+.delete-profile-btn,
+.logout-btn {
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin: 1rem auto;
+    transition: background-color 0.3s ease;
+    display: block;
+    width: fit-content;
+}
+
+.delete-profile-btn:hover,
+.logout-btn:hover {
+    background-color: var(--danger-hover-color);
+}
+
+/* Remove the active state transform */
+.delete-profile-btn:active,
+.logout-btn:active {
+    background-color: var(--danger-hover-color);
+}
+
+/* Error styles for form fields */
+.profile-field input.error,
+.profile-field select.error {
+    border-color: var(--danger-color);
+    background-color: rgba(255, 0, 0, 0.05);
+}
+
+.profile-field input.error:focus,
+.profile-field select.error:focus {
+    border-color: var(--danger-color);
+    box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.2);
+}
+
+/* Update auth-container height */
+.auth-container {
+    max-width: 400px;
+    margin: 30px auto;
+    padding: 2rem;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    height: auto;
+    min-height: 400px;
+    overflow: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+/* Profile error message */
+.profile-error-message {
+    background-color: rgba(220, 53, 69, 0.1);
+    border: 1px solid var(--danger-color);
+    border-radius: 4px;
+    animation: fadeIn 0.3s ease;
+}
+
+.profile-error-message.success {
+    background-color: rgba(40, 167, 69, 0.1);
+    border-color: var(--success-color);
+    color: var(--success-color);
+}
+
+/* Add these styles for the popup */
+.popup-notification {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--card-bg);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    min-width: 300px;
+    text-align: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.popup-content {
+    margin-bottom: 20px;
+}
+
+.popup-message {
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+}
+
+.popup-success {
+    color: var(--success-color);
+}
+
+.popup-error {
+    color: var(--danger-color);
+}
+
+.popup-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.popup-btn:hover {
+    background-color: var(--hover-color);
+}
+
+/* Add overlay styles */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 999;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Medicine item styles */
+.medicine-item {
+    border: 1px solid var(--border-color);
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.add-medicine-btn {
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.remove-medicine-btn {
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.add-medicine-btn:hover {
+    background-color: var(--hover-color);
+}
+
+.remove-medicine-btn:hover {
+    background-color: #ff3333;
+}
+
+.add-medicine-btn i,
+.remove-medicine-btn i {
+    font-size: 1rem;
+}
+
+/* Form group styles */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--text-color);
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+}
+
+.form-group input[type="file"] {
+    padding: 5px;
+}
+
+/* Adjust form group layout */
+.medicine-item .form-group {
+    margin-bottom: 0;
+}
+
+/* Style the buttons consistently */
+.save-btn, .add-medicine-btn, .preview-image-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.save-btn:hover, .add-medicine-btn:hover, .preview-image-btn:hover {
+    background-color: var(--hover-color);
+}
+
+/* Style for image preview */
+.prescription-image-preview {
+    max-width: 200px;
+    max-height: 200px;
+    margin: 10px 0;
+    cursor: pointer;
+}
+
+/* Image preview modal */
+.image-preview-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 1100;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* Show modal with animation */
+.image-preview-modal.show {
+    display: block;
+    opacity: 1;
+}
+
+.image-preview-modal img {
+    max-width: 90%;
+    max-height: 90vh;
+    margin: auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+}
+
+/* Scale up image when modal is shown */
+.image-preview-modal.show img {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* Close button style */
+.image-preview-modal .close {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    z-index: 1101;
+}
+
+/* Button group styles */
+.button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 10px;
+    align-items: center;
+}
+
+/* Consistent save button style for all modals */
+.save-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+    width: auto;
+    min-width: 150px;
+    margin: 10px auto;
+}
+
+/* Keep Add Medicine button left-aligned */
+.button-group .add-medicine-btn {
+    margin-right: auto;
+    margin-bottom: 10px;
+}
+
+/* Remove the specific override for prescription modal */
+.button-group .save-btn {
+    width: auto;
+    min-width: 150px;
+    padding: 10px 20px;
+    font-size: 1rem;
+    margin: 10px auto;
+}
+
+/* Image upload container styles */
+.image-upload-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Custom file input container */
+.file-input-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+/* Custom file input button */
+.image-upload-container input[type="file"] {
+    opacity: 0;
+    width: 0.1px;
+    height: 0.1px;
+    position: absolute;
+}
+
+/* Custom button label */
+.image-upload-container label {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease;
+    white-space: nowrap;
+}
+
+.image-upload-container label:hover {
+    background-color: var(--hover-color);
+}
+
+/* File name display */
+.file-name {
+    color: var(--text-color);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Preview button style */
+.preview-image-btn {
+    display: none;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+/* Add placeholder space for first medicine item */
+.medicine-item:first-child::after {
+    content: '';
+    width: 0;
+    height: 28px;
+    margin-top: 24px;
+    grid-column: 6;
+    visibility: hidden;
+}
+
+/* Update the confirmation popup styles */
+.delete-confirmation {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    background-color: var(--card-bg);
+    padding: 2rem;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 1002;
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Add show class for animation */
+.delete-confirmation.show {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+}
+
+/* Update overlay styles */
+.delete-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 1001;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* Add show class for overlay */
+.delete-overlay.show {
+    opacity: 1;
+}
+
+/* Add these styles for the button container and buttons */
+.profile-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin: 1.5rem auto;
+    align-items: center;
+}
+
+.save-profile-btn,
+.logout-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+    min-width: 140px;
+    height: 45px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    line-height: 1;
+}
+
+.save-profile-btn:hover,
+.logout-btn:hover {
+    background-color: var(--hover-color);
+}
+
+/* Add specific style for delete profile button */
+.delete-profile-btn {
+    display: block;
+    margin: 1rem auto;
+    width: fit-content;
+}
+
+/* Restore the confirmation button styles */
+.delete-confirmation h3 {
+    color: var(--danger-color);
+    margin-bottom: 1rem;
+}
+
+.delete-confirmation p {
+    color: var(--text-color);
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.delete-confirmation-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.delete-confirmation-buttons button {
+    padding: 0.8rem 1.5rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.confirm-delete {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.confirm-delete:hover {
+    background-color: var(--danger-hover-color);
+}
+
+.cancel-delete {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color) !important;
+}
+
+.cancel-delete:hover {
+    background-color: var(--input-bg);
+}
+
+/* Update styles for save confirmation */
+.delete-confirmation button.confirm-delete[style*="primary"] {
+    background-color: var(--primary-color) !important;
+}
+
+.delete-confirmation button.confirm-delete[style*="primary"]:hover {
+    background-color: var(--hover-color) !important;
+}
+
+/* Update icon color for save confirmation */
+.delete-confirmation h3[style*="success"] i {
+    margin-right: 8px;
+    color: var(--success-color);
+}
+
+/* Search Results Styles */
+.search-results {
+    margin-top: 1rem;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.medicine-result-card {
+    background-color: var(--card-bg);
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.medicine-name {
+    color: #00bfff;
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+}
+
+.reminder-type {
+    color: #00bfff;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.result-details {
+    margin-top: 1rem;
+}
+
+.result-details p {
+    margin: 0.5rem 0;
+    color: white;
+}
+
+.expiry-date {
+    color: white !important;
+}
+
+.days-remaining {
+    font-weight: 500;
+}
+
+.medicine-type {
+    color: white !important;
+}
+
+.dosage, .frequency {
+    color: white !important;
+}
+
+/* Add loading state */
+.search-container.loading button {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+.search-container.loading button i {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Notification styles */
+.notification {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    font-weight: 500;
+    background-color: #1a1b1e;
+    border: 1px solid #3a3d42;
+    min-width: 300px;
+    max-width: 400px;
+    transition: all 0.3s ease-out;
+    transform-origin: right;
+}
+
+.notification i {
+    font-size: 1.4em;
+    margin-right: 4px;
+}
+
+.notification.success {
+    color: #00e676;
+}
+
+.notification.success i {
+    color: #00e676;
+}
+
+.notification.error {
+    color: #ff4d4d;
+}
+
+.notification.error i {
+    color: #ff4d4d;
+}
+
+.notification.warning {
+    color: #ffd700;
+}
+
+.notification.warning i {
+    color: #ffd700;
+}
+
+.notification.info {
+    color: #00bfff;
+}
+
+.notification.info i {
+    color: #00bfff;
+}
+
+/* Stack multiple notifications */
+.notification + .notification {
+    top: calc(80px + 70px);
+}
+
+.notification + .notification + .notification {
+    top: calc(80px + 140px);
+}
+
+.file-upload-container {
+    margin-bottom: 1rem;
+}
+
+.upload-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.upload-btn:hover {
+    background-color: var(--hover-color);
+}
+
+.file-info {
+    display: none;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem;
+    background-color: #2a2a2a;
+    border-radius: 6px;
+}
+
+.file-name {
+    color: var(--text-color);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.view-image {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease;
+}
+
+.view-image:hover {
+    background-color: var(--hover-color);
+}
+
+.remove-image {
+    background-color: var(--danger-color);
+    border: none;
+    border-radius: 4px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.remove-image:hover {
+    background-color: #ff3333;
+}
+
+.notification.fade-out {
+    opacity: 0;
+    transform: translateX(100%);
+}
+
+/* Mobile styles */
+@media (max-width: 480px) {
+    .modal-content {
+        width: 95%;
+        padding: 1rem;
+        margin: 10px auto;
+    }
+
+    .medicine-item {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .form-group {
+        width: 100%;
+    }
+
+    .notification {
+        width: 90%;
+        right: 5%;
+        left: 5%;
+    }
+
+    .search-container {
+        width: 90%;
+    }
+
+    .reminder-card {
+        margin: 10px 0;
+    }
+}
+
+/* Button loading state styles */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+    pointer-events: none;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    margin: -10px 0 0 -10px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: button-loading-spinner 0.8s linear infinite;
+}
+
+@keyframes button-loading-spinner {
+    from {
+        transform: rotate(0turn);
+    }
+    to {
+        transform: rotate(1turn);
+    }
+}
+
+/* Apply loading state to specific buttons */
+.auth-btn.btn-loading,
+.set-reminder-btn.btn-loading,
+.save-btn.btn-loading {
+    background-color: var(--primary-color);
+    opacity: 0.8;
+}

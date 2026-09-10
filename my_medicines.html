@@ -1,0 +1,1770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DawaTrack - My Medicines</title>
+    <link rel="icon" type="image/png" href="images/logo.png">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        // Initialize Supabase client using shared configuration
+        const supabase = window.supabase.createClient(
+            window.SUPABASE_CONFIG.url,
+            window.SUPABASE_CONFIG.anonKey
+        );
+
+        // Wait for Supabase to be ready
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Test the connection
+                const { data: { session } } = await supabase.auth.getSession();
+                console.log('Supabase connected successfully');
+            } catch (error) {
+                console.error('Failed to connect to Supabase:', error);
+                showNotification('Failed to connect to database. Please refresh the page.', 'error');
+            }
+        });
+
+        // Helper function to show notifications
+        // Notification queue system
+        const notificationQueue = [];
+        let isShowingNotification = false;
+
+        function showNotification(message, type = 'info') {
+            // Add to queue
+            notificationQueue.push({ message, type });
+            
+            // If no notification is showing, start processing queue
+            if (!isShowingNotification) {
+                processNotificationQueue();
+            }
+        }
+
+        function processNotificationQueue() {
+            if (notificationQueue.length === 0) {
+                isShowingNotification = false;
+                return;
+            }
+
+            isShowingNotification = true;
+            const { message, type } = notificationQueue.shift();
+
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(notification);
+
+            // Trigger fade-in
+            setTimeout(() => notification.classList.add('show'), 100);
+
+            // Auto-remove after delay
+            setTimeout(() => {
+                notification.classList.add('fade-out');
+                setTimeout(() => {
+                    notification.remove();
+                    // Process next notification in queue
+                    processNotificationQueue();
+                }, 300);
+            }, 3000);
+        }
+
+        // Function to format date in 12-hour format (as specified in memories)
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true // Ensure 12-hour format as per memories
+            });
+        }
+
+        // Function to format expiry date
+        function formatExpiryDate(dateString) {
+            const date = new Date(dateString);
+            const today = new Date();
+            const daysUntilExpiry = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
+            
+            let expiryClass = '';
+            if (daysUntilExpiry <= 0) {
+                expiryClass = 'expired';
+            } else if (daysUntilExpiry <= 30) {
+                expiryClass = 'expiring-soon';
+            }
+
+            return {
+                formatted: date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                }),
+                daysUntilExpiry,
+                expiryClass
+            };
+        }
+
+        // Global medicines array to store current medicines
+        let medicines = [];
+
+        // Function to get current user
+        async function getCurrentUser() {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (error) {
+                console.error('Error getting user:', error);
+                return null;
+            }
+            return user;
+        }
+
+        // Function to load medicines from Supabase
+        async function loadMedicines() {
+            try {
+                // Show loading spinner
+                document.getElementById('loadingSpinner').style.display = 'flex';
+                document.getElementById('medicinesGrid').style.display = 'none';
+                document.getElementById('noMedicines').style.display = 'none';
+
+                const user = await getCurrentUser();
+                if (!user) {
+                    showNotification('Please login to view medicines', 'error');
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('medicines')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('expiry_date', { ascending: true });
+
+                if (error) throw error;
+
+                medicines = data || [];
+                renderMedicines(medicines);
+
+            } catch (error) {
+                console.error('Error loading medicines:', error);
+                showNotification('Failed to load medicines. Please refresh the page.', 'error');
+            } finally {
+                // Hide loading spinner
+                document.getElementById('loadingSpinner').style.display = 'none';
+                document.getElementById('medicinesGrid').style.display = 'grid';
+            }
+        }
+
+        // Function to create expiry reminder
+        async function createExpiryReminder(medicine, daysUntilExpiry) {
+            try {
+                const user = await getCurrentUser();
+                if (!user) {
+                    showNotification('Please login to create reminders', 'error');
+                    return;
+                }
+
+                const expiryDate = new Date(medicine.expiry_date);
+                const reminderDate = new Date(expiryDate);
+                reminderDate.setDate(reminderDate.getDate() - 30); // Set reminder 30 days before expiry
+
+                // Format time in 12-hour format as per memories
+                const time = new Date().toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+
+                const reminderData = {
+                    title: `Medicine Expiry: ${medicine.name}`,
+                    type: 'expiry',
+                    date: reminderDate.toISOString().split('T')[0],
+                    time: time,
+                    notes: `"${medicine.name}" will expire on ${expiryDate.toLocaleDateString()}. Please check and replace if needed.`,
+                    created_at: new Date().toISOString(),
+                    status: 'pending',
+                    priority: 'high',
+                    user_id: user.id
+                };
+
+                const { data, error } = await supabase
+                    .from('reminders')
+                    .insert([reminderData])
+                    .select();
+
+                if (error) {
+                    console.error('Supabase error:', error);
+                    throw new Error(error.message);
+                }
+
+                if (!data || data.length === 0) {
+                    throw new Error('No data returned after creating reminder');
+                }
+
+                showNotification(`Expiry reminder set for ${medicine.name}`, 'success');
+            } catch (error) {
+                console.error('Error creating expiry reminder:', error);
+                showNotification(`Failed to create expiry reminder: ${error.message}`, 'error');
+            }
+        }
+
+        // Function to create stock reminder
+        async function createStockReminder(medicine) {
+            try {
+                const user = await getCurrentUser();
+                if (!user) return;
+
+                // Format time in 12-hour format as per memories
+                const time = new Date().toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+
+                const reminderData = {
+                    title: `Reorder Medicine: ${medicine.name}`,
+                    type: 'reorder', // Match calendar's reminder type
+                    date: new Date().toISOString().split('T')[0], // Store date only
+                    time: time,
+                    notes: `Low stock alert for "${medicine.name}". Current stock: ${medicine.current_stock} units (Minimum required: ${medicine.minimum_stock} units).`,
+                    created_at: new Date().toISOString(),
+                    status: 'pending', // Match calendar's reminder status
+                    priority: 'high' // High priority for expiry reminders
+                };
+
+                const { error: reminderError } = await supabase
+                    .from('reminders')
+                    .insert([reminderData]);
+
+                if (reminderError) throw reminderError;
+
+                showNotification(`Reorder reminder created for ${medicine.name}`, 'success');
+
+                // Update reminder counts in the calendar if it exists
+                if (window.updateReminderCounts) {
+                    window.updateReminderCounts();
+                }
+            } catch (error) {
+                console.error('Error creating reorder request:', error);
+                showNotification('Failed to create reorder request: ' + error.message, 'error');
+            }
+        }
+
+        // Google Calendar constants
+        const GOOGLE_CLIENT_ID = '887243220092-3vj3tklll6meojqrcdcgdrc48568fnh5.apps.googleusercontent.com';
+        const GOOGLE_API_KEY = 'AIzaSyBVlhaLcj5AkSnx9k3b6PUsAtPyOK1Gds0';
+        const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
+        const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
+        let tokenClient;
+        let gapiInited = false;
+        let gisInited = false;
+
+        // Initialize Google API
+        function initializeGoogleAPI() {
+            return new Promise((resolve, reject) => {
+                gapi.load('client', async () => {
+                    try {
+                        await gapi.client.init({
+                            apiKey: GOOGLE_API_KEY,
+                            discoveryDocs: [DISCOVERY_DOC]
+                        });
+
+                        // Initialize the token client after gapi is loaded
+                        tokenClient = google.accounts.oauth2.initTokenClient({
+                            client_id: GOOGLE_CLIENT_ID,
+                            scope: SCOPES,
+                            callback: '', // Will be set later
+                            prompt: 'consent' // Force consent prompt
+                        });
+                        
+                        gapiInited = true;
+                        gisInited = true;
+                        console.log('Google APIs initialized successfully');
+                        resolve();
+                    } catch (error) {
+                        console.error('Error initializing Google API:', error);
+                        reject(error);
+                    }
+                });
+            });
+        }
+
+        async function authenticateGoogleCalendar() {
+            if (!gapiInited || !gisInited) {
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for initialization
+                if (!gapiInited || !gisInited) {
+                    throw new Error('Google APIs not initialized');
+                }
+            }
+
+            if (!gapi.client.getToken()) {
+                return new Promise((resolve, reject) => {
+                    try {
+                        tokenClient.callback = async (resp) => {
+                            if (resp.error) {
+                                reject(new Error('Access denied'));
+                                return;
+                            }
+                            resolve(resp);
+                        };
+                        tokenClient.requestAccessToken({
+                            prompt: 'consent'
+                        });
+                    } catch (error) {
+                        reject(new Error('Failed to request access token'));
+                    }
+                });
+            }
+        }
+
+        async function addToCalendar(medicineName, expiryDate) {
+            try {
+                // Check if Google API is loaded
+                if (!gapi || !gapi.client) {
+                    throw new Error('Google API not loaded');
+                }
+
+                // Check if user is authenticated with Google
+                if (!gapi.client.getToken()) {
+                    // Request calendar permission explicitly
+                    await authenticateGoogleCalendar();
+                }
+
+                // Format expiry date for Google Calendar
+                const eventDateTime = new Date(expiryDate);
+                eventDateTime.setHours(9, 0, 0); // Set reminder for 9:00 AM
+
+                // Create event one day before expiry
+                const reminderDate = new Date(eventDateTime);
+                reminderDate.setDate(reminderDate.getDate() - 1);
+
+                // Format time in 12-hour format for event description
+                const reminderTime = reminderDate.toLocaleString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+
+                const event = {
+                    summary: `Medicine Expiry Reminder: ${medicineName}`,
+                    description: `Your medicine ${medicineName} will expire tomorrow at ${reminderTime}`,
+                    start: {
+                        dateTime: reminderDate.toISOString(),
+                        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                    },
+                    end: {
+                        dateTime: new Date(reminderDate.getTime() + 30 * 60000).toISOString(),
+                        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                    },
+                    reminders: {
+                        useDefault: false,
+                        overrides: [
+                            { method: 'popup', minutes: 24 * 60 },
+                            { method: 'popup', minutes: 60 }
+                        ]
+                    }
+                };
+
+                // Insert the event
+                const response = await gapi.client.calendar.events.insert({
+                    calendarId: 'primary',
+                    resource: event
+                });
+
+                console.log('Calendar event created:', response);
+                return response;
+
+            } catch (error) {
+                console.error('Calendar error:', error);
+                if (error.message.includes('permission') || error.status === 403) {
+                    throw new Error('Please grant calendar access to add reminders');
+                }
+                throw error;
+            }
+        }
+
+        async function handleMedicineSubmit(event) {
+            event.preventDefault();
+            const form = event.target;
+            const submitButton = form.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+
+            try {
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                if (userError) throw userError;
+
+                const formData = new FormData(form);
+                const medicineData = {
+                    name: formData.get('medicineName'),
+                    type: formData.get('medicineType'),
+                    expiry_date: formData.get('expiryDate'),
+                    current_stock: parseInt(formData.get('currentStock')),
+                    minimum_stock: parseInt(formData.get('minimumStock')),
+                    notes: formData.get('notes'),
+                    user_id: user.id
+                };
+
+                // First, save to Supabase
+                const { data, error } = await supabase
+                    .from('medicines')
+                    .insert([medicineData])
+                    .select();
+
+                if (error) throw error;
+
+                // Then, create Google Calendar event
+                try {
+                    await addToCalendar(medicineData.name, medicineData.expiry_date);
+                    showNotification('Medicine added and expiry reminder set in Google Calendar', 'success');
+                    // Close the modal using the existing function
+                    closeMedicineModal();
+                } catch (calendarError) {
+                    console.error('Calendar error:', calendarError);
+                    showNotification('Medicine added but failed to set calendar reminder', 'warning');
+                }
+
+                // Clear form and refresh medicines
+                form.reset();
+                loadMedicines();
+
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(error.message || 'Failed to add medicine', 'error');
+            } finally {
+                submitButton.disabled = false;
+            }
+        }
+
+        // Function to handle medicine deletion
+        async function deleteMedicine(id) {
+            if (!confirm('Are you sure you want to delete this medicine?')) return;
+
+            try {
+                // First get the medicine details for the reminder deletion
+                const { data: medicine, error: fetchError } = await supabase
+                    .from('medicines')
+                    .select('name')
+                    .eq('id', id)
+                    .single();
+
+                if (fetchError) throw fetchError;
+
+                // Delete the medicine
+                const { error } = await supabase
+                    .from('medicines')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                // Delete associated reminders
+                const { error: reminderError } = await supabase
+                    .from('reminders')
+                    .delete()
+                    .or(`title.ilike.%${medicine.name}%,notes.ilike.%${medicine.name}%`);
+
+                if (reminderError) {
+                    console.error('Error deleting associated reminders:', reminderError);
+                }
+
+                showNotification('Medicine deleted successfully', 'success');
+                await loadMedicines();
+
+                // Update reminder counts in the calendar if it exists
+                if (window.updateReminderCounts) {
+                    window.updateReminderCounts();
+                }
+            } catch (error) {
+                console.error('Error deleting medicine:', error);
+                showNotification('Failed to delete medicine: ' + error.message, 'error');
+            }
+        }
+
+        // Function to edit medicine
+        async function editMedicine(id) {
+            try {
+                const { data: medicine, error } = await supabase
+                    .from('medicines')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (error) throw error;
+
+                document.getElementById('modalTitle').textContent = 'Edit Medicine';
+                const form = document.getElementById('medicineForm');
+                form.dataset.medicineId = id;
+                form.medicineName.value = medicine.name;
+                form.medicineType.value = medicine.type;
+                form.expiryDate.value = medicine.expiry_date;
+                form.currentStock.value = medicine.current_stock;
+                form.minimumStock.value = medicine.minimum_stock;
+                form.notes.value = medicine.notes || '';
+                
+                openMedicineModal(id);
+            } catch (error) {
+                console.error('Error loading medicine details:', error);
+                showNotification('Failed to load medicine details', 'error');
+            }
+        }
+
+        // Function to handle reorder
+        async function reorderMedicine(id) {
+            try {
+                const { data: medicine, error } = await supabase
+                    .from('medicines')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (error) throw error;
+
+                const now = new Date();
+                // Create a reorder reminder
+                const reminderData = {
+                    title: `Reorder Medicine: ${medicine.name}`,
+                    type: 'reorder', // Match calendar's reminder type
+                    date: now.toISOString().split('T')[0], // Store date only
+                    time: now.toLocaleTimeString('en-US', { 
+                        hour: 'numeric', 
+                        minute: '2-digit',
+                        hour12: true // Ensure 12-hour format as per memories
+                    }),
+                    notes: `Reorder request for ${medicine.name} (Current stock: ${medicine.current_stock}/${medicine.minimum_stock})`,
+                    created_at: new Date().toISOString(),
+                    status: 'pending', // Match calendar's reminder status
+                    priority: 'high' // High priority for expiry reminders
+                };
+
+                const { error: reminderError } = await supabase
+                    .from('reminders')
+                    .insert([reminderData]);
+
+                if (reminderError) throw reminderError;
+
+                showNotification(`Reorder reminder created for ${medicine.name}`, 'success');
+
+                // Update reminder counts in the calendar if it exists
+                if (window.updateReminderCounts) {
+                    window.updateReminderCounts();
+                }
+            } catch (error) {
+                console.error('Error creating reorder request:', error);
+                showNotification('Failed to create reorder request: ' + error.message, 'error');
+            }
+        }
+
+        // Function to render medicines
+        function renderMedicines(medicines) {
+            const grid = document.getElementById('medicinesGrid');
+            const noMedicines = document.getElementById('noMedicines');
+            
+            if (!medicines.length) {
+                grid.style.display = 'none';
+                noMedicines.style.display = 'flex';
+                return;
+            }
+
+            grid.style.display = 'grid';
+            noMedicines.style.display = 'none';
+            grid.innerHTML = medicines.map(medicine => {
+                const { formatted: expiryFormatted, daysUntilExpiry, expiryClass } = formatExpiryDate(medicine.expiry_date);
+                const stockPercentage = (medicine.current_stock / medicine.minimum_stock) * 100;
+                const stockClass = stockPercentage <= 25 ? 'low' : stockPercentage <= 50 ? 'medium' : 'high';
+                const stockStatus = stockPercentage <= 25 ? 'Low Stock' : stockPercentage <= 50 ? 'Medium Stock' : 'Good Stock';
+
+                return `
+                    <div class="medicine-card ${stockPercentage <= 25 ? 'critical-stock' : ''}">
+                        <div class="medicine-header">
+                            <h3 class="medicine-name">${medicine.name}</h3>
+                            <div class="medicine-actions">
+                                <button onclick="editMedicine('${medicine.id}')" class="btn-icon edit" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="deleteMedicine('${medicine.id}')" class="btn-icon delete" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="info-row">
+                            <strong>Type:</strong> ${medicine.type.charAt(0).toUpperCase() + medicine.type.slice(1)}
+                        </div>
+                        <div class="info-row ${expiryClass}">
+                            <strong>Expires:</strong> 
+                            ${expiryClass === 'expired' 
+                                ? `Expired (${Math.abs(daysUntilExpiry)} days ago)` 
+                                : `${expiryFormatted} (${daysUntilExpiry} days left)`
+                            }
+                        </div>
+                        <div class="info-row ${stockPercentage <= 25 ? 'low-stock' : ''}">
+                            <strong>Stock:</strong>
+                            <div class="stock-info">
+                                <span>${medicine.current_stock} of ${medicine.minimum_stock} units (${stockStatus})</span>
+                                <div class="stock-bar">
+                                    <div class="stock-level ${stockClass}" style="width: ${Math.min(stockPercentage, 100)}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        ${medicine.notes ? `
+                        <div class="info-row">
+                            <strong>Notes:</strong> ${medicine.notes}
+                        </div>
+                        ` : ''}
+                        ${stockPercentage <= 50 ? `
+                        <div class="btn-reorder">
+                            <button onclick="reorderMedicine('${medicine.id}')" title="Reorder Medicine">
+                                <i class="fas fa-shopping-cart"></i> Reorder Medicine
+                            </button>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Function to filter medicines
+        function filterMedicines() {
+            const searchInput = document.getElementById('searchInput');
+            const searchTerm = searchInput.value.toLowerCase().trim();
+
+            // If search is empty, show all medicines
+            if (!searchTerm) {
+                renderMedicines(medicines);
+                return;
+            }
+
+            // Filter medicines based on search term
+            const filteredMedicines = medicines.filter(medicine => {
+                const searchableText = [
+                    medicine.name,
+                    medicine.type,
+                    medicine.notes,
+                    formatDate(medicine.expiry_date)
+                ].join(' ').toLowerCase();
+
+                return searchableText.includes(searchTerm);
+            });
+
+            // Sort filtered medicines the same way as the main list
+            filteredMedicines.sort((a, b) => {
+                // First sort by expiry status
+                const aExpiry = new Date(a.expiry_date);
+                const bExpiry = new Date(b.expiry_date);
+                const today = new Date();
+                const aExpired = aExpiry < today;
+                const bExpired = bExpiry < today;
+                
+                if (aExpired !== bExpired) {
+                    return aExpired ? -1 : 1; // Show expired medicines first
+                }
+
+                // Then sort by stock status
+                const aStockPercentage = (a.current_stock / a.minimum_stock) * 100;
+                const bStockPercentage = (b.current_stock / b.minimum_stock) * 100;
+                const aLowStock = aStockPercentage <= 25;
+                const bLowStock = bStockPercentage <= 25;
+
+                if (aLowStock !== bLowStock) {
+                    return aLowStock ? -1 : 1; // Show low stock medicines next
+                }
+
+                // Finally sort by expiry date
+                return aExpiry - bExpiry;
+            });
+
+            renderMedicines(filteredMedicines);
+
+            // Show feedback about search results
+            if (filteredMedicines.length === 0) {
+                const grid = document.getElementById('medicinesGrid');
+                grid.innerHTML = `
+                    <div class="no-medicines">
+                        <i class="fas fa-search"></i>
+                        <p>No medicines found matching "${searchTerm}"</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Function to handle search box focus
+        function handleSearchFocus(event) {
+            const searchBox = event.target.closest('.search-box');
+            if (event.type === 'focus') {
+                searchBox.classList.add('focused');
+            } else {
+                searchBox.classList.remove('focused');
+            }
+        }
+
+        // Function to open medicine modal
+        function openMedicineModal(medicineId = null) {
+            const modal = document.getElementById('medicineModal');
+            const form = document.getElementById('medicineForm');
+            const modalTitle = document.getElementById('modalTitle');
+
+            // Add state to browser history when opening modal
+            const state = { modal: 'medicine', medicineId };
+            history.pushState(state, '', window.location.pathname);
+
+            // Reset form
+            form.reset();
+            form.dataset.medicineId = medicineId || '';
+
+            if (medicineId) {
+                modalTitle.textContent = 'Edit Medicine';
+                // Load medicine data
+                const medicine = medicines.find(m => m.id === medicineId);
+                if (medicine) {
+                    form.medicineName.value = medicine.name;
+                    form.medicineType.value = medicine.type;
+                    form.expiryDate.value = medicine.expiry_date;
+                    form.currentStock.value = medicine.current_stock;
+                    form.minimumStock.value = medicine.minimum_stock;
+                    form.notes.value = medicine.notes || '';
+                }
+            } else {
+                modalTitle.textContent = 'Add New Medicine';
+                // Set default expiry date to tomorrow
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                form.expiryDate.value = tomorrow.toISOString().split('T')[0];
+                
+                // Set default stock values
+                form.currentStock.value = '0';
+                form.minimumStock.value = '10';
+            }
+
+            // Show modal
+            modal.classList.add('show');
+            // Force reflow to ensure transition works
+            modal.offsetHeight;
+            modal.querySelector('.modal-content').style.transform = 'translateY(0)';
+
+            // Add click outside to close
+            const closeOnOutsideClick = (e) => {
+                if (e.target === modal) {
+                    closeMedicineModal();
+                    modal.removeEventListener('click', closeOnOutsideClick);
+                }
+            };
+            modal.addEventListener('click', closeOnOutsideClick);
+
+            // Add escape key to close
+            const closeOnEscape = (e) => {
+                if (e.key === 'Escape') {
+                    closeMedicineModal();
+                    document.removeEventListener('keydown', closeOnEscape);
+                }
+            };
+            document.addEventListener('keydown', closeOnEscape);
+        }
+
+        // Function to close medicine modal
+        function closeMedicineModal() {
+            const modal = document.getElementById('medicineModal');
+            const modalContent = modal.querySelector('.modal-content');
+            
+            // Go back in history if we came from a modal state
+            if (history.state && history.state.modal) {
+                history.back();
+            }
+            
+            // Animate out
+            modalContent.style.transform = 'translateY(20px)';
+            
+            // Hide after animation
+            setTimeout(() => {
+                modal.classList.remove('show');
+                modalContent.style.transform = '';
+            }, 200);
+        }
+
+        // Handle browser back/forward
+        window.addEventListener('popstate', (event) => {
+            const modal = document.getElementById('medicineModal');
+            
+            // If we're going back and modal is open, close it
+            if (modal.classList.contains('show')) {
+                modal.querySelector('.modal-content').style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    modal.classList.remove('show');
+                    modal.querySelector('.modal-content').style.transform = '';
+                }, 200);
+            }
+            // If we're going forward to a modal state, open it
+            else if (event.state && event.state.modal === 'medicine') {
+                openMedicineModal(event.state.medicineId);
+            }
+        });
+
+        // Add event listeners
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await getCurrentUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Add form submit handler
+            const medicineForm = document.getElementById('medicineForm');
+            medicineForm.addEventListener('submit', handleMedicineSubmit);
+
+            // Add search handlers
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', filterMedicines);
+            searchInput.addEventListener('focus', handleSearchFocus);
+            searchInput.addEventListener('blur', handleSearchFocus);
+
+            // Load medicines
+            await loadMedicines();
+
+            // Set up real-time subscription for medicines
+            supabase
+                .channel('medicines_changes')
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'medicines',
+                    filter: `user_id=eq.${user.id}`
+                }, (payload) => {
+                    // Only reload if the change was not made by this client
+                    if (!payload.old || !payload.new || payload.old.updated_at !== payload.new.updated_at) {
+                        loadMedicines();
+                    }
+                })
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'reminders',
+                    filter: `user_id=eq.${user.id}`
+                }, () => {
+                    loadMedicines();
+                })
+                .subscribe();
+
+            // Initialize date inputs with today's date as min
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('expiryDate').min = today;
+
+            // Add keyboard shortcut for closing modal (Escape key)
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeMedicineModal();
+                }
+            });
+
+            // Initialize Google API
+            initializeGoogleAPI();
+        });
+    </script>
+</head>
+<body>
+    <button type="button" class="home-btn" onclick="window.location.href='index.html'" aria-label="Go to home">
+        <i class="fas fa-home" aria-hidden="true"></i>
+    </button>
+    <div class="content-wrapper">
+        <div class="container">
+            <div class="header">
+                <div class="header-left">
+                    <h1 class="page-title">
+                        <i class="fas fa-pills" style="color: var(--primary-color);"></i>
+                        <span style="color: var(--primary-color);">My Medicines</span>
+                    </h1>
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search medicines...">
+                    </div>
+                </div>
+                <button class="btn-add" onclick="openMedicineModal()">
+                    <i class="fas fa-plus"></i>
+                    Add Medicine
+                </button>
+            </div>
+
+            <!-- Loading spinner -->
+            <div id="loadingSpinner" class="loading-container">
+                <div class="loading-spinner"></div>
+                <p>Loading medicines...</p>
+            </div>
+
+            <div class="no-medicines" id="noMedicines" style="display: none;">
+                <i class="fas fa-prescription-bottle text-muted mb-3" style="font-size: 2.5rem;"></i>
+                <p>No medicines found. Click "Add Medicine" to add one.</p>
+            </div>
+
+            <div class="medicines-grid" id="medicinesGrid">
+                <!-- Medicine cards will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Medicine Modal -->
+    <div id="medicineModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-pills"></i> <span id="modalTitle">Add New Medicine</span></h2>
+            </div>
+            <form id="medicineForm">
+                <div class="form-group">
+                    <label for="medicineName">Medicine Name</label>
+                    <input type="text" id="medicineName" name="medicineName" placeholder="Enter medicine name" required>
+                </div>
+                <div class="form-group">
+                    <label for="medicineType">Type</label>
+                    <select id="medicineType" name="medicineType" required>
+                        <option value="">Select medicine type</option>
+                        <option value="tablet">Tablet</option>
+                        <option value="capsule">Capsule</option>
+                        <option value="syrup">Syrup</option>
+                        <option value="injection">Injection</option>
+                        <option value="cream">Cream</option>
+                        <option value="drops">Drops</option>
+                        <option value="inhaler">Inhaler</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="expiryDate">Expiry Date</label>
+                    <input type="date" id="expiryDate" name="expiryDate" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="currentStock">Current Stock</label>
+                        <input type="number" id="currentStock" name="currentStock" min="0" placeholder="Enter current stock" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="minimumStock">Minimum Stock Level</label>
+                        <input type="number" id="minimumStock" name="minimumStock" min="0" placeholder="Enter minimum stock level" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="notes">Notes (Optional)</label>
+                    <textarea id="notes" name="notes" rows="3" placeholder="Add any additional notes"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeMedicineModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Medicine</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        /* Base styles */
+        :root {
+            --primary-color: rgb(0, 182, 219);
+            --primary-color-rgb: 0, 182, 219;
+            --primary-color-light: #4dc9e6;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --danger-color: #f44336;
+            --text-color: #333333;
+            --text-muted: #666666;
+            --border-color: #e0e0e0;
+            --card-bg: #ffffff;
+            --bg-color: #f5f5f5;
+            --card-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            --card-shadow-hover: 0 4px 8px rgba(0,0,0,0.15);
+            --hover-bg: rgba(0,0,0,0.05);
+            
+            /* Reminder type colors (matching calendar) */
+            --prescription-color: #2196f3;
+            --checkup-color: #9c27b0;
+            --expiry-color: #f44336;
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --text-color: #ffffff;
+                --text-muted: #a0a0a0;
+                --border-color: #2a2a2a;
+                --card-bg: #1e1e1e;
+                --bg-color: #121212;
+                --hover-bg: rgba(255,255,255,0.1);
+                --card-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                --card-shadow-hover: 0 4px 8px rgba(0,0,0,0.3);
+            }
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            background: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .content-wrapper {
+            padding-top: 4rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .home-btn {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            margin: 12px;
+            height: 48px;
+            min-width: 48px;
+            z-index: 1000;
+            -webkit-tap-highlight-color: transparent;
+            top: 0;
+            left: 0;
+        }
+
+        .home-btn i {
+            font-size: 24px;
+            color: var(--primary-color);
+        }
+
+        @media (max-width: 768px) {
+            .content-wrapper {
+                padding: 1rem;
+                padding-top: 4rem;
+            }
+        }
+
+        /* Header styles */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            gap: 2rem;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .header h1 {
+            color: var(--text-color);
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .page-title {
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+        }
+
+        .page-title i {
+            color: var(--primary-color);
+        }
+
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0 1rem;
+            transition: all 0.2s ease;
+            min-width: 300px;
+        }
+
+        .search-box:hover {
+            border-color: var(--text-muted);
+        }
+
+        .search-box.focused {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+        }
+
+        .search-box i {
+            color: var(--text-muted);
+            font-size: 1rem;
+            margin-right: 0.75rem;
+        }
+
+        .search-box input {
+            border: none;
+            background: none;
+            padding: 0.875rem 0;
+            width: 100%;
+            color: var(--text-color);
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+
+        .search-box input::placeholder {
+            color: var(--text-muted);
+            opacity: 0.8;
+        }
+
+        .search-box input:focus {
+            outline: none;
+        }
+
+        .btn-add {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-add:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        .btn-add i {
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .header-left {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .search-box {
+                min-width: auto;
+            }
+
+            .btn-add {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Dark mode overrides */
+        @media (prefers-color-scheme: dark) {
+            .search-box {
+                background: var(--card-bg);
+            }
+
+            .search-box input {
+                color: var(--text-color);
+            }
+
+            .search-box input::placeholder {
+                color: var(--text-muted);
+            }
+
+            .btn-add:hover {
+                filter: brightness(1.2);
+            }
+        }
+
+        /* Medicine cards */
+        .medicines-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .medicine-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            transition: all 0.2s ease;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .medicine-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--card-shadow-hover);
+            border-color: var(--primary-color);
+        }
+
+        .medicine-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.25rem;
+            padding-bottom: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .medicine-name {
+            color: var(--primary-color);
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0;
+            line-height: 1.3;
+        }
+
+        .medicine-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-left: 1rem;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+        }
+
+        .btn-icon:hover {
+            background: var(--hover-bg);
+            color: var(--primary-color);
+            transform: translateY(-1px);
+        }
+
+        .btn-icon.delete:hover {
+            color: var(--danger-color);
+            background: rgba(244, 67, 54, 0.1);
+        }
+
+        .btn-icon.edit:hover {
+            color: var(--primary-color);
+            background: rgba(33, 150, 243, 0.1);
+        }
+
+        .btn-icon i {
+            font-size: 1.1rem;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-color);
+            font-size: 0.95rem;
+        }
+
+        .info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-row strong {
+            color: var(--text-muted);
+            min-width: 90px;
+            font-weight: 500;
+        }
+
+        .info-row.expired {
+            color: var(--danger-color);
+            font-weight: 500;
+        }
+
+        .info-row.low-stock {
+            color: var(--warning-color);
+            font-weight: 500;
+        }
+
+        .stock-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .stock-bar {
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .stock-level {
+            height: 100%;
+            width: 0;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .stock-level.high {
+            background: var(--success-color);
+        }
+
+        .stock-level.medium {
+            background: var(--warning-color);
+        }
+
+        .stock-level.low {
+            background: var(--danger-color);
+        }
+
+        .btn-reorder {
+            margin-top: auto;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .btn-reorder button {
+            width: 100%;
+            background: var(--warning-color);
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-reorder button:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        .critical-stock .btn-reorder button {
+            background: var(--danger-color);
+        }
+
+        .no-medicines {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: var(--card-bg);
+            border-radius: 12px;
+            color: var(--text-muted);
+            font-size: 1rem;
+            box-shadow: var(--card-shadow);
+            margin: 2rem 0;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .no-medicines i {
+            font-size: 2.5rem;
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+
+        .no-medicines p {
+            margin: 0;
+        }
+
+        /* Modal styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            transform: translateY(20px);
+            transition: transform 0.2s ease;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            border: 1px solid var(--border-color);
+        }
+
+        .modal.show {
+            opacity: 1;
+            display: flex;
+        }
+
+        .modal.show .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal h2 {
+            color: var(--text-color);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0 0 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .modal h2 i {
+            color: var(--primary-color);
+            font-size: 1.25rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-color);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .form-group label i {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            cursor: help;
+            transition: color 0.2s ease;
+        }
+
+        .form-group label i:hover {
+            color: var(--primary-color);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--card-bg);
+            color: var(--text-color);
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+
+        .form-group input:hover,
+        .form-group select:hover,
+        .form-group textarea:hover {
+            border-color: var(--text-muted);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: var(--text-muted);
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .btn-primary,
+        .btn-secondary {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+            transform: translateY(-1px);
+        }
+
+        /* Modal layout styles */
+        .modal-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h2 {
+            color: var(--text-color);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .modal-header h2 i {
+            color: var(--primary-color);
+            font-size: 1.25rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .form-row .form-group {
+            margin-bottom: 0;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-group input[type="date"] {
+            font-family: inherit;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .modal-footer {
+                flex-direction: column-reverse;
+                gap: 0.75rem;
+            }
+        }
+
+        /* Dark mode overrides */
+        @media (prefers-color-scheme: dark) {
+            .modal-content {
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            }
+
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                background: var(--card-bg);
+            }
+
+            .btn-secondary:hover {
+                background: rgba(255, 255, 255, 0.1);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .modal-content {
+                padding: 1.5rem;
+                width: 95%;
+            }
+
+            .modal h2 {
+                font-size: 1.25rem;
+            }
+
+            .form-group {
+                margin-bottom: 1rem;
+            }
+
+            .modal-footer {
+                margin-top: 1.5rem;
+                padding-top: 1.25rem;
+            }
+
+            .btn-primary,
+            .btn-secondary {
+                padding: 0.75rem 1.25rem;
+                width: 100%;
+            }
+        }
+
+        /* Notification styles */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            font-weight: 500;
+            background-color: #1a1b1e;
+            border: 1px solid #3a3d42;
+            min-width: 300px;
+            max-width: 400px;
+            transition: all 0.3s ease-out;
+            transform-origin: right;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .notification i {
+            font-size: 1.4em;
+            margin-right: 4px;
+        }
+
+        .notification.success {
+            color: #00e676;
+        }
+
+        .notification.success i {
+            color: #00e676;
+        }
+
+        .notification.error {
+            color: #ff4d4d;
+        }
+
+        .notification.error i {
+            color: #ff4d4d;
+        }
+
+        .notification.warning {
+            color: #ffd700;
+        }
+
+        .notification.warning i {
+            color: #ffd700;
+        }
+
+        .notification.info {
+            color: #00bfff;
+        }
+
+        .notification.info i {
+            color: #00bfff;
+        }
+
+        /* Stack multiple notifications */
+        .notification + .notification {
+            top: calc(80px + 70px);
+        }
+
+        .notification + .notification + .notification {
+            top: calc(80px + 140px);
+        }
+
+        .notification.fade-out {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Loading spinner styles */
+        .loading-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            color: var(--text-muted);
+        }
+
+        .loading-container p {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(var(--primary-color-rgb), 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+    <script src="dawadost.js"></script>
+</body>
+</html>

@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="google-site-verification" content="TwYX81CHwKmlDdxkjn0lKHT9RnuLCUc29PUfSYZXxHU" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" type="image/png" href="images/logo.png">
+    <title>DawaTrack - Medicine Tracking and Reminder System</title>
+    <meta name="title" content="DawaTrack - Medicine Tracking and Reminder System">
+    <meta name="description" content="DawaTrack helps you track your medications, set reminders, and manage your health journey effectively. Never miss a dose with our smart reminder system.">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://dawatrack.netlify.app/">
+    <meta property="og:title" content="DawaTrack - Medicine Tracking and Reminder System">
+    <meta property="og:description" content="Track your medications, set reminders, and manage your health journey effectively. Never miss a dose with our smart reminder system.">
+    <meta property="og:image" content="https://dawatrack.netlify.app/images/logo.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://dawatrack.netlify.app/">
+    <meta property="twitter:title" content="DawaTrack - Medicine Tracking and Reminder System">
+    <meta property="twitter:description" content="Track your medications, set reminders, and manage your health journey effectively. Never miss a dose with our smart reminder system.">
+    <meta property="twitter:image" content="https://dawatrack.netlify.app/images/logo.png">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml">
+    <meta name="sitemap" content="https://dawatrack.netlify.app/sitemap.xml" />
+    <style>
+        /* Update footer styles */
+        footer {
+            background-color: transparent;
+            padding: 1rem;
+            text-align: center;
+            width: 100%;
+            margin-top: 2rem; /* Add space above footer */
+            position: relative; /* Remove fixed positioning */
+        }
+
+        /* Update main content styles */
+        main {
+            min-height: calc(100vh - 200px); /* Ensure content takes up space */
+            padding-bottom: 3rem; /* Add space for footer */
+        }
+
+        /* Keep modal styles the same but remove footer z-index since it's not fixed anymore */
+        .modal {
+            z-index: 1000;
+        }
+
+        .modal .close {
+            z-index: 1001;
+        }
+
+        .modal-content {
+            z-index: 1001;
+        }
+
+        /* Add these modal-specific styles */
+        .modal {
+            z-index: 2000; /* Higher than footer */
+        }
+
+        .modal .close {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            line-height: 1;
+            z-index: 2001; /* Higher than modal */
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--card-bg);
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Make modals more mobile-friendly */
+        .modal-content {
+            padding: 2rem 1rem;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            z-index: 2000; /* Same as modal */
+        }
+
+        @media (max-width: 480px) {
+            .modal-content {
+                padding: 1.5rem 1rem;
+                margin: 10px;
+            }
+
+            .modal .close {
+                right: 10px;
+                top: 10px;
+            }
+        }
+
+        /* Prescription Modal Mobile Styles */
+        @media (max-width: 480px) {
+            #prescriptionModal .medicine-item {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                align-items: center;
+                width: 100%;
+            }
+
+            #prescriptionModal .form-group {
+                width: 100%;
+                margin-bottom: 0;
+                text-align: center;
+            }
+
+            #prescriptionModal .form-group input,
+            #prescriptionModal .form-group select {
+                width: 100%;
+                text-align: center;
+            }
+
+            #prescriptionModal .button-group {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                margin-top: 20px;
+                width: 100%;
+                text-align: center;
+            }
+
+            #prescriptionModal .add-medicine-btn,
+            #prescriptionModal .remove-medicine-btn {
+                margin: 0 auto;
+            }
+
+            #prescriptionModal .save-btn {
+                width: 100%;
+                max-width: 200px;
+                margin: 0 auto;
+            }
+
+            /* Keep the remove button at its original size and center it */
+            #prescriptionModal .remove-medicine-btn {
+                width: 30px;
+                height: 30px;
+                padding: 5px;
+                min-width: unset;
+                display: block;
+            }
+        }
+
+        /* Add these base styles for all screen sizes */
+        #prescriptionModal .button-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+            width: 100%;
+            gap: 15px;
+        }
+
+        #prescriptionModal .add-medicine-btn {
+            margin: 0;
+        }
+
+        #prescriptionModal .save-btn {
+            width: 100%;
+            max-width: 200px;
+        }
+
+        /* Update the responsive search box styles */
+        @media (max-width: 480px) {
+            .search-container {
+                max-width: 85% !important;
+                position: relative; /* For absolute positioning of button */
+            }
+
+            .search-container input {
+                font-size: 14px;
+                padding: 8px 40px 8px 12px; /* Add right padding for button */
+                height: 40px;
+                width: 100%;
+            }
+
+            .search-container button {
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0;
+                position: absolute; /* Position inside the input */
+                right: 0;
+                top: 0;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .search-container button i {
+                font-size: 14px;
+                margin: 0;
+            }
+        }
+
+        /* Update the mobile modal headings styles */
+        @media (max-width: 480px) {
+            #checkupModal h2 {
+                font-size: 1.5rem;
+                line-height: 1.3;
+                margin-bottom: 1.5rem; /* Match other modals' spacing */
+                border-bottom: 2px solid var(--primary-color);
+                padding-bottom: 0.5rem;
+            }
+            
+            #checkupModal h2 span {
+                display: block;
+                margin-top: -5px; /* Bring the "Reminder" text closer to "Set Check-up" */
+            }
+        }
+
+        /* Update z-index hierarchy */
+        .modal {
+            z-index: 1000;
+        }
+
+        .modal-content {
+            z-index: 1001;
+        }
+
+        /* Update notification styles */
+        .notification,
+        .alert,
+        .success-message,
+        .error-message,
+        #toast,
+        .toast,
+        .message {
+            z-index: 9999 !important;
+            position: fixed;
+            top: 80px; /* Position below header/profile icon */
+            right: 20px; /* Align to right */
+            transform: none; /* Remove center transform */
+            width: auto; /* Allow width to be based on content */
+            min-width: 200px; /* Minimum width */
+            max-width: calc(100% - 40px); /* Maximum width with margins */
+            left: auto; /* Remove left positioning */
+        }
+
+        /* Adjust for mobile */
+        @media (max-width: 480px) {
+            .notification,
+            .alert,
+            .success-message,
+            .error-message,
+            #toast,
+            .toast,
+            .message {
+                top: 70px;
+                right: 10px;
+                max-width: calc(100% - 20px);
+            }
+        }
+
+        /* Style for the backdrop when notifications are shown */
+        .notification-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9998; /* Just below notifications */
+        }
+
+        /* Navigation menu styles */
+        .sidenav {
+            height: 100%;
+            width: 0;
+            position: fixed;
+            z-index: 10000;
+            top: 0;
+            left: 0;
+            background-color: var(--card-bg);
+            overflow-x: hidden;
+            transition: width 0.3s ease;
+            padding-top: 70px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .sidenav.open {
+            width: 320px;
+        }
+
+        .sidenav-content {
+            padding: 0 24px;
+            white-space: nowrap;
+            overflow-x: hidden;
+        }
+
+        .sidenav a {
+            padding: 16px 0;
+            text-decoration: none;
+            font-size: 1.1rem;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: transparent;
+            font-weight: 500;
+            margin: 4px 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .sidenav a i {
+            width: 24px;
+            text-align: center;
+            font-size: 1.2rem;
+            color: var(--primary-color);
+        }
+
+        .sidenav .closebtn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 28px;
+            color: var(--primary-color);
+            text-decoration: none;
+            padding: 0;
+            background: none;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            position: relative;
+        }
+
+        .logo-img {
+            margin-left: 0.25rem;
+        }
+
+        .menu-btn {
+            position: relative;
+            display: flex !important;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            margin: 0;
+            height: 48px;
+            min-width: 48px;
+            z-index: 10001;
+            opacity: 1;
+            visibility: visible;
+            flex-shrink: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .menu-line {
+            width: 24px;
+            height: 2px;
+            background-color: var(--primary-color);
+            margin: 3px 0;
+        }
+
+        .menu-btn.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .sidenav-overlay {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            backdrop-filter: blur(2px);
+            transition: opacity 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .sidenav-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        * {
+            outline: none !important;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 1.8rem;
+                padding: 1rem;
+                line-height: 1.2;
+                letter-spacing: -0.3px;
+            }
+
+            .page-title span {
+                font-size: 1rem;
+                margin-top: 0.3rem;
+                letter-spacing: normal;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-title {
+                font-size: 1.5rem;
+                padding: 0.75rem;
+                line-height: 1.15;
+                letter-spacing: -0.2px;
+            }
+
+            .page-title span {
+                font-size: 0.9rem;
+                margin-top: 0.25rem;
+                letter-spacing: normal;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidenav-overlay" onclick="closeNav()" role="button" tabindex="0" aria-label="Close menu overlay"></div>
+    <div id="mySidenav" class="sidenav" role="navigation" aria-label="Main menu">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()" aria-label="Close menu">&times;</a>
+        <div class="sidenav-content">
+            <a href="charts.html">
+                <i class="fas fa-chart-bar" aria-hidden="true"></i>
+                Statistics
+            </a>
+            <a href="medicine_library.html">
+                <i class="fas fa-book" aria-hidden="true"></i>
+                Medicine Library
+            </a>
+            <a href="reminder_calendar.html">
+                <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                Reminder Calendar
+            </a>
+            <a href="my_medicines.html">
+                <i class="fas fa-pills" aria-hidden="true"></i>
+                My Medicines
+            </a>       
+            <a href="sensor_dashboard.html">
+                <i class="fas fa-wave-square" aria-hidden="true"></i>
+                Sensor Dashboard
+            </a>
+            <a href="health_tips.html">
+                <i class="fas fa-heart" aria-hidden="true"></i>
+                Health Tips
+            </a>
+        </div>
+    </div>
+
+    <header>
+        <div class="logo">
+            <button type="button" class="menu-btn" onclick="openNav()" aria-label="Open menu">
+                <div class="menu-line" aria-hidden="true"></div>
+                <div class="menu-line" aria-hidden="true"></div>
+                <div class="menu-line" aria-hidden="true"></div>
+            </button>
+            <img src="images/logo.png" alt="DawaTrack Logo" class="logo-img">
+            <span>DawaTrack</span>
+        </div>
+        <nav>
+            <div class="user-profile">
+                <i class="fas fa-user-circle" id="userProfileIcon"></i>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Add User Profile Modal -->
+    <div class="modal" id="userProfileModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>User Profile</h2>
+            <div class="profile-details">
+                <div class="profile-field">
+                    <label>Name</label>
+                    <input type="text" id="userName" placeholder="Enter your name">
+                </div>
+                <div class="profile-field">
+                    <label>Age</label>
+                    <input type="text" id="userAge" placeholder="Enter your age" pattern="[0-9]*" inputmode="numeric" maxlength="3" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+                </div>
+                <div class="profile-field">
+                    <label>Gender</label>
+                    <select id="userGender">
+                        <option value="">Select gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="profile-field">
+                    <label>Email ID</label>
+                    <input type="email" id="userEmail" placeholder="Enter your email" readonly>
+                </div>
+                <div class="profile-field">
+                    <label>Mobile Number</label>
+                    <input type="tel" id="userMobile" placeholder="Enter your mobile number">
+                </div>
+                <div class="profile-field">
+                    <label>Emergency Mobile Number</label>
+                    <input type="tel" id="userEmergencyMobile" placeholder="Enter emergency contact">
+                </div>
+                <button type="button" class="set-reminder-btn save-profile-btn">Save Profile</button>
+            </div>
+        </div>
+    </div>
+
+    <main>
+        <section class="search-section">
+            <h1 style="font-size: clamp(2rem, 5vw, 2.5rem); margin-bottom: 1.5rem;">Track Medicines & More</h1>
+            <div class="search-container" style="max-width: 600px; margin: 0 auto;">
+                <input type="text" id="searchInput" placeholder="Search medicines & more...">
+                <button><i class="fas fa-search"></i></button>
+            </div>
+            <div id="searchResults" class="search-results"></div>
+        </section>
+
+        <section class="reminders-section" style="padding: 1rem;">
+            <div class="reminder-card">
+                <h2>Medicine Expiry</h2>
+                <button class="set-reminder-btn" data-type="expiry">
+                    <i class="fas fa-calendar-alt"></i> Set Reminder
+                </button>
+            </div>
+
+            <div class="reminder-card">
+                <h2>Prescription Details</h2>
+                <button class="set-reminder-btn" data-type="prescription">
+                    <i class="fas fa-prescription"></i> Set Reminder
+                </button>
+            </div>
+
+            <div class="reminder-card">
+                <h2>Check-up Reminder</h2>
+                <button class="set-reminder-btn" data-type="checkup">
+                    <i class="fas fa-stethoscope"></i> Set Reminder
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Templates -->
+    <div class="modal" id="expiryModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Set Medicine Expiry Reminder</h2>
+            <form id="expiryForm">
+                <input type="text" name="medicineName" placeholder="Medicine Name" required>
+                <input type="date" name="expiryDate" placeholder="Expiry Date" required>
+                <div class="form-field">
+                    <label for="medicineType">Medicine Type</label>
+                    <select id="medicineType" name="medicineType" required>
+                        <option value="">Select Medicine Type</option>
+                        <optgroup label="Solid Medicines">
+                            <option value="tablets">Tablets</option>
+                            <option value="capsules">Capsules</option>
+                            <option value="pills">Pills</option>
+                            <option value="lozenges">Lozenges</option>
+                            <option value="powders">Powders</option>
+                        </optgroup>
+                        <optgroup label="Liquid Medicines">
+                            <option value="syrups">Syrups</option>
+                            <option value="suspensions">Suspensions</option>
+                            <option value="drops">Drops</option>
+                            <option value="tinctures">Tinctures</option>
+                        </optgroup>
+                        <optgroup label="Topical Medicines">
+                            <option value="creams">Creams</option>
+                            <option value="ointments">Ointments</option>
+                            <option value="gels">Gels</option>
+                            <option value="patches">Patches</option>
+                        </optgroup>
+                        <optgroup label="Inhalable Medicines">
+                            <option value="inhalers">Inhalers</option>
+                            <option value="nebulizer_solutions">Nebulizer Solutions</option>
+                        </optgroup>
+                        <optgroup label="Injectable Medicines">
+                            <option value="prefilled_syringes">Pre-filled Syringes</option>
+                            <option value="ampoules_vials">Ampoules/Vials</option>
+                        </optgroup>
+                        <optgroup label="Suppositories">
+                            <option value="suppositories">Suppositories</option>
+                        </optgroup>
+                        <optgroup label="Miscellaneous">
+                            <option value="herbal_remedies">Herbal Remedies</option>
+                            <option value="vitamins_supplements">Vitamins & Supplements</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="reminder-preferences">
+                    <h3>Reminder Preferences</h3>
+                    <div class="form-field">
+                        <select name="reminderTime" required>
+                            <option value="">Select Reminder Time</option>
+                            <option value="15days">15 days before expiry</option>
+                            <option value="ondate">On the date of expiry</option>
+                            <option value="custom">Custom date & time</option>
+                        </select>
+                    </div>
+                    <div class="form-field datetime-field">
+                        <input type="datetime-local" name="customTime" class="custom-time" required>
+                    </div>
+                </div>
+                <button type="submit">Save Reminder</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Prescription Modal -->
+    <div id="prescriptionModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Set Prescription Reminder</h2>
+            <form id="prescriptionForm">
+                <div class="form-group">
+                    <label>Prescription Name</label>
+                    <input type="text" name="prescriptionName" required placeholder="Enter prescription name">
+                </div>
+                <div class="file-upload-container">
+                    <input type="file" id="prescriptionImage" accept="image/*" style="display: none;">
+                    <button type="button" class="upload-btn">
+                        <i class="fas fa-upload"></i> Upload Prescription Image
+                    </button>
+                    <div class="file-info" style="display: none;">
+                        <span class="file-name"></span>
+                        <button type="button" class="view-image">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                        <button type="button" class="remove-image">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="medicineList">
+                    <div class="medicine-item">
+                        <div class="form-group">
+                            <label>Medicine Name</label>
+                            <input type="text" name="medicineName" required placeholder="Enter medicine name">
+                        </div>
+                        <div class="form-group">
+                            <label>Dosage</label>
+                            <input type="number" name="dosage" required placeholder="Enter dosage" step="0.5">
+                        </div>
+                        <div class="form-group">
+                            <label>Frequency</label>
+                            <select name="frequency" required>
+                                <option value="">Select frequency</option>
+                                <option value="once">Once Daily</option>
+                                <option value="twice">Twice Daily</option>
+                                <option value="thrice">Thrice Daily</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Time to Take</label>
+                            <input type="time" name="timeToTake" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Reminder Preference</label>
+                            <input type="datetime-local" name="reminderPreference" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button type="button" id="addMedicine" class="add-medicine-btn">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button type="submit" class="save-btn">Save Reminder</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="checkupModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Set Check-up<span>Reminder</span></h2>
+            <form id="checkupForm">
+                <input type="text" name="doctorName" placeholder="Doctor's Name" required>
+                <input type="text" name="clinicLocation" placeholder="Clinic Location" required>
+                <div class="form-field">
+                    <label for="appointmentDateTime">Appointment Date & Time</label>
+                    <input type="datetime-local" id="appointmentDateTime" name="appointmentDateTime" required>
+                </div>
+                <div class="reminder-preferences">
+                    <h3>Reminder Preferences</h3>
+                    <div class="form-field">
+                        <select name="reminderTime" required>
+                            <option value="">Select Reminder Time</option>
+                            <option value="1day">1 Day Before</option>
+                            <option value="custom">Custom Date & Time</option>
+                        </select>
+                    </div>
+                    <div class="form-field datetime-field">
+                        <input type="datetime-local" name="customTime" class="custom-time">
+                    </div>
+                </div>
+                <button type="submit">Save Reminder</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Update Image Modal -->
+    <div class="image-modal">
+        <span class="close-image-modal">&times;</span>
+        <img id="modalImage" alt="Prescription Image" draggable="false">
+    </div>
+
+    <!-- Image Preview Modal -->
+    <div class="image-preview-modal" id="imagePreviewModal">
+        <span class="close">&times;</span>
+        <img id="previewModalImage" src="" alt="Prescription Preview">
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle custom time selection in all reminder forms
+            document.querySelectorAll('.reminder-preferences select').forEach(select => {
+                select.addEventListener('change', function() {
+                    const customTimeInput = this.closest('.reminder-preferences').querySelector('.custom-time');
+                    if (this.value === 'custom') {
+                        customTimeInput.style.display = 'block';
+                        customTimeInput.required = true;
+                    } else {
+                        customTimeInput.style.display = 'none';
+                        customTimeInput.required = false;
+                    }
+                });
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get all close buttons and modals
+            const closeButtons = document.querySelectorAll('.close');
+            const modals = document.querySelectorAll('.modal');
+
+            // Add both click and touchend events for close buttons
+            closeButtons.forEach(button => {
+                ['click', 'touchend'].forEach(eventType => {
+                    button.addEventListener(eventType, function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const modal = this.closest('.modal');
+                        if (modal) {
+                            modal.style.display = 'none';
+                        }
+                    });
+                });
+            });
+
+            // Close modal when clicking outside
+            modals.forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.style.display = 'none';
+                    }
+                });
+            });
+
+            // Prevent modal content clicks from closing the modal
+            document.querySelectorAll('.modal-content').forEach(content => {
+                content.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            });
+        });
+
+        function openNav() {
+            document.getElementById("mySidenav").classList.add("open");
+            document.querySelector(".sidenav-overlay").classList.add("visible");
+            document.querySelector(".menu-btn").classList.add("hidden");
+        }
+
+        function closeNav() {
+            document.getElementById("mySidenav").classList.remove("open");
+            document.querySelector(".sidenav-overlay").classList.remove("visible");
+            setTimeout(() => {
+                document.querySelector(".menu-btn").classList.remove("hidden");
+            }, 300);
+        }
+    </script>
+
+    <footer>
+        <a href="privacy_policy.html" style="color: var(--text-color); text-decoration: none; font-size: 0.9rem; opacity: 0.6; transition: opacity 0.3s ease;">
+            Privacy Policy
+        </a>
+    </footer>
+    
+    <!-- Include the DawaDost script directly -->
+    <script src="dawadost.js"></script>
+</body>
+</html>

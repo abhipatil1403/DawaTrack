@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DawaTrack - Medicine Library</title>
+    <link rel="icon" type="image/png" href="images/logo.png">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <style>
+        :root {
+            --primary-color-rgb: 52, 152, 219;
+        }
+
+        .search-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .search-box {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 15px rgba(var(--primary-color-rgb), 0.2);
+        }
+
+        #suggestions {
+            width: 100%;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            position: absolute;
+            top: 100%;
+            left: 0;
+            z-index: 1000;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .suggestion-item {
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-item:hover {
+            background: rgba(var(--primary-color-rgb), 0.1);
+        }
+
+        .suggestion-item strong {
+            color: var(--primary-color);
+        }
+
+        .results-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 1400px;
+            padding: 1rem 2rem;
+            margin: 0 auto;
+        }
+
+        .medicine-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+            transition: transform 0.2s;
+        }
+
+        .medicine-card h3 {
+            color: var(--primary-color);
+            margin: 0 0 1rem;
+            font-size: 1.5rem;
+        }
+
+        .medicine-info {
+            display: grid;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .info-section {
+            margin-bottom: 1rem;
+        }
+
+        .info-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-section h4 {
+            color: var(--primary-color);
+            margin: 0 0 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .info-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .info-item {
+            background: rgba(var(--primary-color-rgb), 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: var(--text-color);
+        }
+
+        .class-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .class-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .class-item strong {
+            color: var(--primary-color);
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .class-item span {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .home-btn {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            margin: 12px;
+            height: 48px;
+            min-width: 48px;
+            z-index: 1000;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .home-btn i {
+            font-size: 24px;
+            color: var(--primary-color);
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 2rem;
+            background: var(--card-bg);
+            border-radius: 16px;
+            margin: 2rem auto;
+            max-width: 500px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .no-results h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .no-results p {
+            opacity: 0.8;
+        }
+
+        .page-title {
+            text-align: center;
+            margin: 1rem 0 2rem;
+            color: var(--primary-color);
+            font-size: 2.5rem;
+            font-weight: 600;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            line-height: 1.2;
+        }
+
+        .page-title span {
+            font-size: 1.1rem;
+            font-weight: 400;
+            opacity: 0.7;
+            color: var(--text-color);
+            margin-top: 0.25rem;
+        }
+
+        .content-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 64px 24px 24px;
+        }
+
+        @media (max-width: 768px) {
+            .home-btn {
+                margin: 8px;
+            }
+
+            .page-title {
+                font-size: 2rem;
+                margin: 0.5rem 0 1.5rem;
+            }
+
+            .page-title span {
+                font-size: 1rem;
+            }
+
+            .content-wrapper {
+                padding: 48px 16px 16px;
+            }
+
+            .search-container {
+                padding: 1rem;
+            }
+
+            .results-container {
+                padding: 1rem;
+                grid-template-columns: 1fr;
+            }
+
+            input {
+                font-size: 0.9rem;
+                padding: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button type="button" class="home-btn" onclick="window.location.href='index.html'" aria-label="Go to home">
+        <i class="fas fa-home" aria-hidden="true"></i>
+    </button>
+    <div class="content-wrapper">
+        <h1 class="page-title">
+            Medicine Library
+            <span>Search for Medicines, Substitutes & more</span>
+        </h1>
+
+        <div class="search-box">
+            <input type="text" id="searchBox" placeholder="Type a medicine name..." onkeyup="searchMedicine()">
+            <div id="suggestions"></div>
+        </div>
+    </div>
+
+    <div class="results-container" id="result"></div>
+
+    <script>
+        // Check if there's a medicine parameter in the URL
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const medicineName = urlParams.get('medicine');
+            
+            if (medicineName) {
+                // Set the search box value
+                document.getElementById("searchBox").value = medicineName;
+                // Trigger the search
+                selectMedicine(medicineName);
+            }
+        });
+
+        // Initialize Supabase client using shared configuration
+        const supabaseClient = supabase.createClient(
+            window.SUPABASE_CONFIG.url,
+            window.SUPABASE_CONFIG.anonKey
+        );
+
+        async function searchMedicine() {
+            let searchTerm = document.getElementById("searchBox").value.toLowerCase();
+            let suggestionsBox = document.getElementById("suggestions");
+
+            if (searchTerm.length < 2) { 
+                suggestionsBox.style.display = "none";
+                document.getElementById("result").innerHTML = ""; // Clear the result area
+                return;
+            }
+
+            // Search in both name and uses columns
+            const { data: nameResults, error: nameError } = await supabaseClient
+                .from('new_medicine_dataset')
+                .select('*')
+                .ilike('name', `%${searchTerm}%`);
+
+            const { data: useResults, error: useError } = await supabaseClient
+                .from('new_medicine_dataset')
+                .select('*')
+                .ilike('uses', `%${searchTerm}%`);
+
+            if (nameError || useError) throw nameError || useError;
+
+            // Combine and deduplicate results
+            const allResults = [...(nameResults || []), ...(useResults || [])];
+            const uniqueResults = Array.from(new Map(allResults.map(item => [item.name, item])).values());
+
+            // Show suggestions
+            if (uniqueResults.length > 0) {
+                suggestionsBox.innerHTML = uniqueResults.map(med => {
+                    // Extract uses for highlighting
+                    const uses = med.uses ? med.uses.replace(/[\[\]"]/g, '').split(',').map(u => u.trim()) : [];
+                    const matchingUses = uses.filter(use => use.toLowerCase().includes(searchTerm));
+
+                    return `
+                        <div class='suggestion-item' onclick="selectMedicine('${med.name}')">
+                            <strong>${med.name}</strong>
+                            ${matchingUses.length ? `
+                                <div style="font-size: 0.85rem; opacity: 0.7; margin-top: 4px;">
+                                    Uses: ${matchingUses.join(', ')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+                suggestionsBox.style.display = "block";
+            } else {
+                suggestionsBox.style.display = "none";
+                showNoResults();
+            }
+        }
+
+        async function selectMedicine(name) {
+            document.getElementById("searchBox").value = name;
+            document.getElementById("suggestions").style.display = "none";
+
+            const { data, error } = await supabaseClient
+                .from('new_medicine_dataset')
+                .select('*')
+                .eq('name', name)
+                .single();
+
+            if (error || !data) {
+                showNoResults();
+                return;
+            }
+
+            // Clean and parse the data
+            const cleanArray = (str) => str ? str.replace(/[\[\]"]/g, '').split(',').map(item => item.trim()).filter(item => item) : [];
+            
+            // Get values for each category
+            const substitutes = cleanArray(data.substitute);
+            const uses = cleanArray(data.uses);
+            const sideEffects = cleanArray(data.side_effects);
+
+            // Build the card HTML
+            document.getElementById("result").innerHTML = `
+                <div class="medicine-card">
+                    <h3>${data.name}</h3>
+                    <div class="medicine-info">
+                        ${substitutes.length ? `
+                            <div class="info-section">
+                                <h4>Substitutes</h4>
+                                <div class="info-list">
+                                    ${substitutes.map(sub => `
+                                        <div class="info-item">${sub}</div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${uses.length ? `
+                            <div class="info-section">
+                                <h4>Uses</h4>
+                                <div class="info-list">
+                                    ${uses.map(use => `
+                                        <div class="info-item">${use}</div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${sideEffects.length ? `
+                            <div class="info-section">
+                                <h4>Side Effects</h4>
+                                <div class="info-list">
+                                    ${sideEffects.map(effect => `
+                                        <div class="info-item">${effect}</div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        <div class="class-info">
+                            ${data.chemical_class ? `
+                                <div class="class-item">
+                                    <strong>Chemical Class</strong>
+                                    <span>${data.chemical_class}</span>
+                                </div>
+                            ` : ''}
+                            
+                            ${data.therapeutic_class ? `
+                                <div class="class-item">
+                                    <strong>Therapeutic Class</strong>
+                                    <span>${data.therapeutic_class}</span>
+                                </div>
+                            ` : ''}
+                            
+                            ${data.action_class ? `
+                                <div class="class-item">
+                                    <strong>Action Class</strong>
+                                    <span>${data.action_class}</span>
+                                </div>
+                            ` : ''}
+                            
+                            ${data.habit_forming ? `
+                                <div class="class-item">
+                                    <strong>Habit Forming</strong>
+                                    <span>${data.habit_forming}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showNoResults() {
+            document.getElementById("result").innerHTML = `
+                <div class="no-results">
+                    <h3>No Results Found</h3>
+                    <p>Please try another search term.</p>
+                </div>
+            `;
+        }
+    </script>
+    <script src="dawadost.js"></script>
+</body>
+</html>

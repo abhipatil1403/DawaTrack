@@ -1,0 +1,376 @@
+.dawadost-message {
+    margin: 10px;
+    max-width: 80%;
+    clear: both;
+}
+
+.dawadost-user-message {
+    float: right;
+    background-color: #007bff;
+    color: white;
+    border-radius: 15px 15px 0 15px;
+    padding: 10px 15px;
+    max-width: 80%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.dawadost-bot-message {
+    float: left;
+    background-color: #f1f1f1;
+    color: black;
+    border-radius: 15px 15px 15px 0;
+    padding: 10px 15px;
+}
+
+.dawadost-message-content {
+    margin-bottom: 5px;
+    line-height: 1.4;
+}
+
+.dawadost-message-content br {
+    margin-bottom: 5px;
+}
+
+.dawadost-message-time {
+    font-size: 0.75em;
+    opacity: 0.7;
+    text-align: right;
+}
+
+.dawadost-message ul {
+    margin: 5px 0;
+    padding-left: 20px;
+}
+
+.dawadost-message li {
+    margin: 3px 0;
+}
+
+/* Clear floats after messages */
+.dawadost-message::after {
+    content: "";
+    clear: both;
+    display: table;
+}
+
+/* Ensure proper spacing between messages */
+.dawadost-chat-messages {
+    padding: 10px;
+    overflow-y: auto;
+    max-height: 400px;
+}
+
+/* Style for bullet points */
+.dawadost-bot-message .dawadost-message-content {
+    white-space: pre-line;
+}
+
+/* Add spacing after + symbol in bot messages */
+.dawadost-bot-message .dawadost-message-content {
+    white-space: pre-line;
+}
+
+.dawadost-bot-message .dawadost-message-content span {
+    white-space: pre-line;
+}
+
+/* Add spacing after + symbol */
+.dawadost-bot-message .dawadost-message-content span::after {
+    content: " ";
+}
+
+/* Ensure proper alignment of timestamps */
+.dawadost-message-time {
+    display: block;
+    text-align: right;
+    margin-top: 5px;
+    font-size: 0.7em;
+    color: #666;
+}
+
+/* DawaDost Chatbot Styles */
+.dawadost-chat-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+.dawadost-chat-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dawadost-chat-modal {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 350px;
+    height: 500px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    display: none;
+    flex-direction: column;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.dawadost-chat-modal.active {
+    display: flex;
+}
+
+.dawadost-chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    background-color: #4CAF50;
+    color: white;
+}
+
+.dawadost-chat-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dawadost-avatar {
+    width: 40px;
+    height: 40px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dawadost-chat-title h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.dawadost-chat-title p {
+    margin: 0;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.dawadost-close-button {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.dawadost-chat-messages {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background-color: #f5f5f5;
+    max-height: calc(100% - 120px);
+}
+
+.dawadost-message {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    max-width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.dawadost-message-content {
+    max-width: 80%;
+    padding: 10px 12px;
+    border-radius: 18px;
+    line-height: 1.4;
+    font-size: 14px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.dawadost-user-message {
+    align-items: flex-end;
+}
+
+.dawadost-user-message .dawadost-message-content {
+    background-color: #4CAF50;
+    color: white;
+    border-bottom-right-radius: 4px;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.dawadost-bot-message {
+    align-items: flex-start;
+}
+
+.dawadost-bot-message .dawadost-message-content {
+    background-color: white;
+    color: #333;
+    border-bottom-left-radius: 4px;
+}
+
+.dawadost-message-time {
+    font-size: 0.7rem;
+    color: #888;
+    margin-top: 5px;
+}
+
+.dawadost-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 15px;
+    background-color: white;
+    border-top: 1px solid #eee;
+}
+
+.dawadost-suggestion-chip {
+    background-color: #f0f0f0;
+    color: #333;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.dawadost-suggestion-chip:hover {
+    background-color: #e0e0e0;
+}
+
+.dawadost-chat-input-container {
+    display: flex;
+    gap: 8px;
+    padding: 10px 15px;
+    background-color: white;
+    border-top: 1px solid #eee;
+}
+
+.dawadost-chat-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    background-color: #f9f9f9;
+    color: #333;
+    font-size: 14px;
+}
+
+.dawadost-chat-input:focus {
+    outline: none;
+    border-color: #4CAF50;
+}
+
+.dawadost-send-button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.dawadost-send-button:hover {
+    background-color: #45a049;
+}
+
+.dawadost-typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    background-color: white;
+    border-radius: 18px;
+    width: fit-content;
+    margin-bottom: 15px;
+}
+
+.dawadost-typing-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #888;
+    border-radius: 50%;
+    opacity: 0.6;
+    animation: dawadost-typing 1.4s infinite ease-in-out;
+}
+
+.dawadost-typing-dot:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.dawadost-typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.dawadost-typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes dawadost-typing {
+    0%, 60%, 100% {
+        transform: translateY(0);
+    }
+    30% {
+        transform: translateY(-4px);
+    }
+}
+
+/* Fix for long content in messages */
+.dawadost-bot-message .dawadost-message-content {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Ensure lists are properly wrapped */
+.dawadost-bot-message .dawadost-message-content ol,
+.dawadost-bot-message .dawadost-message-content ul,
+.dawadost-user-message .dawadost-message-content ol,
+.dawadost-user-message .dawadost-message-content ul {
+    padding-left: 20px;
+    margin: 5px 0;
+}
+
+/* Ensure long medicine names don't overflow */
+.dawadost-bot-message .dawadost-message-content li,
+.dawadost-user-message .dawadost-message-content li {
+    word-break: break-word;
+    margin-bottom: 5px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .dawadost-chat-modal {
+        width: 90%;
+        right: 5%;
+        bottom: 80px;
+    }
+} 

@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" type="image/png" href="images/logo.png">
+    <title>DawaTrack - Medicine Analytics</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color-rgb: 52, 152, 219; /* #3498db in RGB */
+        }
+
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            padding: 1rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stat-highlight {
+            background: linear-gradient(135deg, var(--primary-color), #2980b9);
+            border-radius: 16px;
+            padding: 1.5rem;
+            color: white;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-highlight::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+            z-index: 1;
+        }
+
+        .stat-highlight h4 {
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: 500;
+            opacity: 0.95;
+            position: relative;
+            z-index: 2;
+        }
+
+        .stat-highlight .value {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin: 0.5rem 0;
+            position: relative;
+            z-index: 2;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-highlight .trend {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .stat-highlight .trend i {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .stat-highlight:nth-child(1) {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+
+        .stat-highlight:nth-child(2) {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .stat-highlight:nth-child(3) {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+
+        .stat-highlight:nth-child(4) {
+            background: linear-gradient(135deg, #f39c12, #d35400);
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            padding: 1rem 2rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding-top: 1rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+            padding: 16px;
+        }
+
+        .legend-scroll {
+            max-height: 200px;
+            overflow-y: auto;
+            padding-right: 8px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) transparent;
+        }
+
+        .legend-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .legend-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .legend-scroll::-webkit-scrollbar-thumb {
+            background-color: var(--primary-color);
+            border-radius: 3px;
+        }
+
+        .time-filter {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1rem 0;
+            padding: 0.5rem;
+        }
+
+        .time-filter button {
+            padding: 8px 16px;
+            border: none;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .time-filter button:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .time-filter button.active {
+            background: #2980b9;
+            transform: translateY(1px);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .time-filter {
+                gap: 0.5rem;
+                flex-wrap: wrap;
+                padding: 0.5rem;
+                justify-content: center;
+            }
+
+            .time-filter button {
+                padding: 6px 12px;
+                font-size: 13px;
+                flex: 0 1 auto;
+                min-width: 85px;
+                max-width: 120px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .time-filter {
+                gap: 0.4rem;
+                padding: 0.4rem;
+            }
+
+            .time-filter button {
+                padding: 5px 10px;
+                font-size: 12px;
+                min-width: 75px;
+                font-weight: 400;
+            }
+        }
+
+        .page-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            text-align: center;
+            margin: 0;
+            padding: 1.5rem 1rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+
+        .page-title span {
+            display: block;
+            font-size: 1.25rem;
+            color: var(--text-color);
+            opacity: 0.8;
+            margin-top: 0.5rem;
+            font-weight: 400;
+            letter-spacing: normal;
+        }
+
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 1.8rem;
+                padding: 1rem;
+                line-height: 1.2;
+                letter-spacing: -0.3px;
+            }
+
+            .page-title span {
+                font-size: 1rem;
+                margin-top: 0.3rem;
+                letter-spacing: normal;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-title {
+                font-size: 1.5rem;
+                padding: 0.75rem;
+                line-height: 1.15;
+                letter-spacing: -0.2px;
+            }
+
+            .page-title span {
+                font-size: 0.9rem;
+                margin-top: 0.25rem;
+                letter-spacing: normal;
+            }
+        }
+
+        .section-divider {
+            width: 100%;
+            max-width: 1400px;
+            margin: 2rem auto;
+            height: 1px;
+            background: linear-gradient(to right, 
+                transparent, 
+                rgba(var(--primary-color-rgb), 0.2),
+                rgba(var(--primary-color-rgb), 0.2),
+                transparent
+            );
+            position: relative;
+        }
+
+        .section-divider::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(to right,
+                transparent,
+                rgba(var(--primary-color-rgb), 0.3),
+                rgba(var(--primary-color-rgb), 0.3),
+                transparent
+            );
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-stats {
+                grid-template-columns: repeat(2, 1fr);
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .stat-highlight .value {
+                font-size: 1.75rem;
+            }
+
+            .stat-highlight h4 {
+                font-size: 0.85rem;
+            }
+
+            .stat-highlight .trend {
+                font-size: 0.8rem;
+            }
+
+            .stat-highlight .trend i {
+                font-size: 1rem;
+            }
+
+            .stats-container {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+
+            .chart-container {
+                height: 250px;
+            }
+
+            .chart-container {
+                height: 280px;
+                margin: 10px 0;
+                padding: 10px;
+            }
+
+            .stats-container > div {
+                grid-column: 1 / -1;
+            }
+
+            canvas {
+                max-width: 100%;
+                height: auto !important;
+            }
+
+            .chart-js-legend {
+                max-height: 60px;
+            }
+
+            .chart-js-legend li {
+                padding: 4px 8px;
+                font-size: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-container {
+                height: 220px;
+                margin: 8px 0;
+                padding: 8px;
+            }
+        }
+
+        /* Default gradients for stat cards */
+        .stat-highlight {
+            transition: all 0.3s ease;
+        }
+
+        /* Medicine count card */
+        .stat-highlight:nth-child(1) {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+        .stat-highlight:nth-child(1).no-data {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        }
+        .stat-highlight:nth-child(1).has-data {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+
+        /* Expiring medicines card */
+        .stat-highlight:nth-child(2) {
+            background: linear-gradient(135deg, #f1c40f, #f39c12);
+        }
+        .stat-highlight:nth-child(2).warning {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        .stat-highlight:nth-child(2).success {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+
+        /* Upcoming checkups card */
+        .stat-highlight:nth-child(3) {
+            background: linear-gradient(135deg, #1abc9c, #16a085);
+        }
+        .stat-highlight:nth-child(3).active {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+        }
+        .stat-highlight:nth-child(3).inactive {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+
+        /* Time slots card */
+        .stat-highlight:nth-child(4) {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        }
+        .stat-highlight:nth-child(4).no-slots {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        }
+        .stat-highlight:nth-child(4).has-slots {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        }
+
+        /* Add pulse animation for warning state */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .stat-highlight.warning {
+            animation: pulse 2s infinite;
+        }
+
+        /* Add subtle transition for hover */
+        .stat-highlight {
+            transition: all 0.3s ease, background 0.5s ease;
+        }
+
+        .home-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            margin: 12px;
+            height: 48px;
+            min-width: 48px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .home-btn i {
+            font-size: 24px;
+            color: var(--primary-color);
+        }
+
+        .content-wrapper {
+            padding: 0 24px 24px;
+        }
+
+        * {
+            outline: none !important;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .nav-container {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1000;
+        }
+
+        .home-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            background: var(--card-bg);
+            color: var(--text-color);
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            font-weight: 500;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .home-link i {
+            font-size: 1.2rem;
+        }
+
+        /* Chart responsiveness */
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 280px;
+                margin: 10px 0;
+                padding: 10px;
+            }
+
+            .stats-container {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+                padding: 0.75rem;
+            }
+
+            .chart-js-legend {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 8px;
+                padding: 8px;
+                max-height: 80px;
+                overflow-y: auto;
+            }
+
+            .chart-js-legend li {
+                padding: 6px 10px;
+                margin: 2px;
+                font-size: 11px;
+                border-radius: 15px;
+                background: rgba(255, 255, 255, 0.05);
+                white-space: nowrap;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .chart-container {
+                height: 220px;
+                margin: 8px 0;
+                padding: 8px;
+            }
+
+            .stats-container > div {
+                grid-column: 1 / -1;
+            }
+
+            canvas {
+                max-width: 100%;
+                height: auto !important;
+            }
+
+            .chart-js-legend {
+                max-height: 60px;
+            }
+
+            .chart-js-legend li {
+                padding: 4px 8px;
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button type="button" class="home-btn" onclick="window.location.href='index.html'" aria-label="Go to home">
+        <i class="fas fa-home" aria-hidden="true"></i>
+    </button>
+    <div class="content-wrapper">
+        <h1 class="page-title">
+            Medicine Analytics Dashboard
+            <span>Visualize Your Health Journey</span>
+        </h1>
+
+        <div class="dashboard-stats">
+            <div class="stat-highlight">
+                <h4>Total Active Medicines</h4>
+                <div class="value" id="totalMedicines">-</div>
+                <div class="trend">
+                    <i class="fas fa-pills"></i>
+                    <span>Currently Active</span>
+                </div>
+            </div>
+            <div class="stat-highlight">
+                <h4>Medicines Expiring Soon</h4>
+                <div class="value" id="expiringMedicines">-</div>
+                <div class="trend">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Next 7 Days</span>
+                </div>
+            </div>
+            <div class="stat-highlight">
+                <h4>Upcoming Checkups</h4>
+                <div class="value" id="upcomingCheckups">-</div>
+                <div class="trend">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Next 30 Days</span>
+                </div>
+            </div>
+            <div class="stat-highlight">
+                <h4>Daily Medicine Times</h4>
+                <div class="value" id="medicineSlots">-</div>
+                <div class="trend">
+                    <i class="fas fa-clock"></i>
+                    <span>Time Slots</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3>Total Medicines Taken</h3>
+                <div class="chart-container">
+                    <canvas id="medicinesTakenChart"></canvas>
+                    <div class="time-filter">
+                        <button class="active" data-period="daily">Daily</button>
+                        <button data-period="weekly">Weekly</button>
+                        <button data-period="monthly">Monthly</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <h3>Most Frequently Taken Medicine</h3>
+                <div class="chart-container">
+                    <canvas id="frequentMedicinesChart"></canvas>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Upcoming Expiry Alerts</h3>
+                <div class="chart-container">
+                    <canvas id="expiryAlertsChart"></canvas>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Upcoming Checkups</h3>
+                <div class="chart-container">
+                    <canvas id="stockUsageChart"></canvas>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Most Prescribed Medicines by Time Slots</h3>
+                <div class="chart-container">
+                    <canvas id="prescribedMedicinesChart"></canvas>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Doctor Visit Frequency by Location</h3>
+                <div class="chart-container">
+                    <canvas id="doctorVisitsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Initialize Supabase client using shared configuration
+            const supabase = window.supabase.createClient(
+                window.SUPABASE_CONFIG.url,
+                window.SUPABASE_CONFIG.anonKey
+            );
+
+            // Helper function to format dates for display
+            function formatDateForDisplay(date) {
+                return new Date(date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric'
+                });
+            }
+
+            // Helper function to calculate days until date
+            function getDaysUntil(date) {
+                const today = new Date();
+                const targetDate = new Date(date);
+                const diffTime = targetDate - today;
+                return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            }
+
+            // Helper function to limit data points
+            function limitDataPoints(data, limit = 10) {
+                if (Array.isArray(data)) {
+                    return data.slice(0, limit);
+                } else if (typeof data === 'object') {
+                    const entries = Object.entries(data);
+                    const limited = entries.slice(0, limit);
+                    return Object.fromEntries(limited);
+                }
+                return data;
+            }
+
+            // Common chart options with blue theme
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: window.innerWidth <= 768 ? 'bottom' : 'right',
+                        align: 'center',
+                        labels: {
+                            boxWidth: window.innerWidth <= 768 ? 10 : 12,
+                            padding: window.innerWidth <= 768 ? 8 : 15,
+                            font: {
+                                size: window.innerWidth <= 768 ? 10 : 12
+                            },
+                            color: getComputedStyle(document.body).getPropertyValue('--text-color'),
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        enabled: true,
+                        mode: 'nearest',
+                        intersect: false,
+                        padding: window.innerWidth <= 768 ? 8 : 12,
+                        titleFont: {
+                            size: window.innerWidth <= 768 ? 11 : 13
+                        },
+                        bodyFont: {
+                            size: window.innerWidth <= 768 ? 10 : 12
+                        },
+                        displayColors: true,
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: 'white',
+                        bodyColor: 'white',
+                        borderColor: 'rgba(255, 255, 255, 0.2)',
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: getComputedStyle(document.body).getPropertyValue('--text-color'),
+                            maxRotation: window.innerWidth <= 480 ? 45 : 0,
+                            minRotation: window.innerWidth <= 480 ? 45 : 0,
+                            font: {
+                                size: window.innerWidth <= 480 ? 10 : 12
+                            }
+                        },
+                        grid: {
+                            display: window.innerWidth > 480
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            color: getComputedStyle(document.body).getPropertyValue('--text-color'),
+                            font: {
+                                size: window.innerWidth <= 480 ? 10 : 12
+                            }
+                        },
+                        grid: {
+                            display: window.innerWidth > 480
+                        }
+                    }
+                },
+                interaction: {
+                    mode: window.innerWidth <= 768 ? 'nearest' : 'index',
+                    intersect: false
+                }
+            };
+
+            const blueColor = '#3498db';
+            const blueGradient = ctx => {
+                const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                gradient.addColorStop(0, 'rgba(52, 152, 219, 0.6)');
+                gradient.addColorStop(1, 'rgba(52, 152, 219, 0.1)');
+                return gradient;
+            };
+
+            async function initializeCharts() {
+                try {
+                    // Check if user is authenticated
+                    const { data: { user }, error: authError } = await supabase.auth.getUser();
+                    if (authError || !user) {
+                        console.error('Authentication error:', authError);
+                        localStorage.setItem('redirectUrl', 'charts.html');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+
+                    console.log('Fetching data for user:', user.id);
+
+                    // First get all prescriptions for the user
+                    const { data: prescriptions, error: prescriptionsError } = await supabase
+                        .from('prescriptions')
+                        .select('id')
+                        .eq('user_id', user.id);
+
+                    if (prescriptionsError) {
+                        console.error('Error fetching prescriptions:', prescriptionsError);
+                        showError('Error fetching prescriptions');
+                        return;
+                    }
+
+                    // Get prescription medicine details for all user's prescriptions
+                    const prescriptionIds = prescriptions?.map(p => p.id) || [];
+                    
+                    // Get current date for filtering
+                    const now = new Date();
+                    const thirtyDaysAgo = new Date();
+                    thirtyDaysAgo.setDate(now.getDate() - 30);
+                    const nextThirtyDays = new Date();
+                    nextThirtyDays.setDate(now.getDate() + 30);
+
+                    // Format dates for Supabase
+                    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString();
+                    const nextThirtyDaysStr = nextThirtyDays.toISOString();
+                    
+                    // Fetch all required data
+                    const [
+                        { data: prescriptionData, error: prescriptionError },
+                        { data: expiryData, error: expiryError },
+                        { data: checkupData, error: checkupError }
+                    ] = await Promise.all([
+                        supabase
+                            .from('prescription_medicines')
+                            .select('medicine_name,dosage,frequency,time_to_take')
+                            .in('prescription_id', prescriptionIds),
+                        supabase
+                            .from('medicine_expiry')
+                            .select('medicine_name,expiry_date,medicine_type')
+                            .eq('user_id', user.id)
+                            .lte('expiry_date', nextThirtyDaysStr)
+                            .gte('expiry_date', thirtyDaysAgoStr),
+                        supabase
+                            .from('checkup')
+                            .select('doctor_name,appointment_datetime,clinic_location')
+                            .eq('user_id', user.id)
+                            .gte('appointment_datetime', thirtyDaysAgoStr)
+                            .order('appointment_datetime', { ascending: true })
+                    ]);
+
+                    if (prescriptionError) {
+                        console.error('Prescription data error:', prescriptionError);
+                        showError('Error fetching prescription data');
+                    }
+                    if (expiryError) {
+                        console.error('Expiry data error:', expiryError);
+                        showError('Error fetching expiry data');
+                    }
+                    if (checkupError) {
+                        console.error('Checkup data error:', checkupError);
+                        showError('Error fetching checkup data');
+                    }
+
+                    // Initialize empty data arrays if null
+                    const prescriptionMedicines = prescriptionData || [];
+                    const medicineExpiry = expiryData || [];
+                    const checkups = checkupData || [];
+
+                    console.log('Fetched data:', {
+                        prescriptions: prescriptionIds.length,
+                        medicines: prescriptionMedicines.length,
+                        expiry: medicineExpiry.length,
+                        checkups: checkups.length
+                    });
+
+                    // Update dashboard statistics with color changes
+                    const totalMedicinesEl = document.getElementById('totalMedicines');
+                    totalMedicinesEl.textContent = prescriptionMedicines.length;
+                    totalMedicinesEl.parentElement.classList.add(
+                        prescriptionMedicines.length > 0 ? 'has-data' : 'no-data'
+                    );
+                    
+                    const expiringCount = medicineExpiry.filter(med => {
+                        const daysUntil = getDaysUntil(med.expiry_date);
+                        return daysUntil >= 0 && daysUntil <= 7;
+                    }).length;
+                    const expiringEl = document.getElementById('expiringMedicines');
+                    expiringEl.textContent = expiringCount;
+                    expiringEl.parentElement.classList.add(
+                        expiringCount > 0 ? 'warning' : 'success'
+                    );
+                    
+                    const upcomingCount = checkups.filter(checkup => {
+                        const daysUntil = getDaysUntil(checkup.appointment_datetime);
+                        return daysUntil >= 0 && daysUntil <= 30;
+                    }).length;
+                    const checkupsEl = document.getElementById('upcomingCheckups');
+                    checkupsEl.textContent = upcomingCount;
+                    checkupsEl.parentElement.classList.add(
+                        upcomingCount > 0 ? 'active' : 'inactive'
+                    );
+                    
+                    const uniqueTimeSlots = new Set();
+                    prescriptionMedicines.forEach(med => {
+                        if (med.time_to_take) {
+                            med.time_to_take.split(',').forEach(time => {
+                                const [hours, minutes] = time.trim().split(':');
+                                if (!isNaN(hours) && !isNaN(minutes)) {
+                                    uniqueTimeSlots.add(`${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`);
+                                }
+                            });
+                        }
+                    });
+                    const slotsEl = document.getElementById('medicineSlots');
+                    slotsEl.textContent = uniqueTimeSlots.size;
+                    slotsEl.parentElement.classList.add(
+                        uniqueTimeSlots.size > 0 ? 'has-slots' : 'no-slots'
+                    );
+
+                    // Total Medicines Taken Chart (Daily)
+                    const medicinesByTime = prescriptionMedicines.reduce((acc, med) => {
+                        if (med.time_to_take) {
+                            const timeSlots = med.time_to_take.split(',').map(t => t.trim());
+                            timeSlots.forEach(time => {
+                                try {
+                                    const [hours, minutes] = time.split(':');
+                                    if (!isNaN(hours) && !isNaN(minutes)) {
+                                        const slot = `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+                                        acc[slot] = (acc[slot] || 0) + 1;
+                                    }
+                                } catch (error) {
+                                    console.error('Error processing time slot:', time, error);
+                                }
+                            });
+                        }
+                        return acc;
+                    }, {});
+
+                    // Group data by periods
+                    const groupDataByPeriod = (data, period) => {
+                        const grouped = {};
+                        
+                        Object.entries(data).forEach(([time, count]) => {
+                            const [hours] = time.split(':');
+                            let key = '';
+                            
+                            if (period === 'daily') {
+                                key = time;
+                            } else if (period === 'weekly') {
+                                const hour = parseInt(hours);
+                                if (hour < 6) key = 'Night (12AM-6AM)';
+                                else if (hour < 12) key = 'Morning (6AM-12PM)';
+                                else if (hour < 18) key = 'Afternoon (12PM-6PM)';
+                                else key = 'Evening (6PM-12AM)';
+                            } else if (period === 'monthly') {
+                                const hour = parseInt(hours);
+                                if (hour < 12) key = 'Morning (12AM-12PM)';
+                                else key = 'Evening (12PM-12AM)';
+                            }
+                            
+                            grouped[key] = (grouped[key] || 0) + count;
+                        });
+                        
+                        return grouped;
+                    };
+
+                    let medicinesTakenChart = null;
+
+                    const updateChart = (period) => {
+                        const groupedData = groupDataByPeriod(medicinesByTime, period);
+                        const limitedData = limitDataPoints(groupedData, 10);
+                        const labels = Object.keys(limitedData).sort();
+                        const data = labels.map(label => limitedData[label]);
+
+                        if (medicinesTakenChart) {
+                            medicinesTakenChart.data.labels = labels;
+                            medicinesTakenChart.data.datasets[0].data = data;
+                            medicinesTakenChart.update();
+                        }
+                    };
+
+                    // Initialize chart with daily data
+                    const medicinesTakenCtx = document.getElementById('medicinesTakenChart').getContext('2d');
+                    medicinesTakenChart = new Chart(medicinesTakenCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: Object.keys(medicinesByTime).sort(),
+                            datasets: [{
+                                label: 'Medicines Per Time Slot',
+                                data: Object.keys(medicinesByTime).sort().map(k => medicinesByTime[k]),
+                                backgroundColor: blueColor,
+                                borderRadius: 5
+                            }]
+                        },
+                        options: {
+                            ...chartOptions,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    // Add event listeners to time filter buttons
+                    const timeFilterButtons = document.querySelectorAll('.time-filter button');
+                    timeFilterButtons.forEach(button => {
+                        button.addEventListener('click', (e) => {
+                            // Remove active class from all buttons
+                            timeFilterButtons.forEach(btn => btn.classList.remove('active'));
+                            // Add active class to clicked button
+                            e.target.classList.add('active');
+                            // Update chart with selected period
+                            updateChart(e.target.dataset.period);
+                        });
+                    });
+
+                    // Most Frequently Taken Medicine (by frequency)
+                    const medicineCounts = prescriptionMedicines.reduce((acc, med) => {
+                        if (med.medicine_name && med.frequency) {
+                            const dailyCount = med.frequency.toLowerCase().includes('daily') ? 1 :
+                                             med.frequency.toLowerCase().includes('twice') ? 2 :
+                                             med.frequency.toLowerCase().includes('thrice') ? 3 : 1;
+                            acc[med.medicine_name] = (acc[med.medicine_name] || 0) + dailyCount;
+                        }
+                        return acc;
+                    }, {});
+
+                    const sortedMedicines = Object.entries(medicineCounts)
+                        .sort(([,a], [,b]) => b - a)
+                        .slice(0, 8);
+
+                    const frequentMedicinesCtx = document.getElementById('frequentMedicinesChart').getContext('2d');
+                    new Chart(frequentMedicinesCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: sortedMedicines.map(([name]) => name) || ['No Data'],
+                            datasets: [{
+                                data: sortedMedicines.map(([,count]) => count) || [0],
+                                backgroundColor: [
+                                    '#3498db',
+                                    '#2980b9',
+                                    '#1f618d',
+                                    '#154360',
+                                    '#0a2942',
+                                    '#2471a3',
+                                    '#1a5276',
+                                    '#1b4f72'
+                                ]
+                            }]
+                        },
+                        options: {
+                            plugins: {
+                                legend: {
+                                    position: 'right',
+                                    labels: {
+                                        color: getComputedStyle(document.body).getPropertyValue('--text-color'),
+                                        padding: 20,
+                                        font: {
+                                            size: 12
+                                        }
+                                    },
+                                    display: true,
+                                    overflow: 'scroll'
+                                }
+                            },
+                            layout: {
+                                padding: 20
+                            },
+                            scales: {
+                                x: {
+                                    display: false
+                                },
+                                y: {
+                                    display: false
+                                }
+                            }
+                        }
+                    });
+
+                    // Upcoming Expiry Alerts
+                    const sortedExpiryData = medicineExpiry
+                        .filter(med => med.expiry_date && med.medicine_name)
+                        .map(med => ({
+                            ...med,
+                            daysUntil: getDaysUntil(med.expiry_date)
+                        }))
+                        .filter(med => med.daysUntil >= 0) // Only show non-expired medicines
+                        .sort((a, b) => a.daysUntil - b.daysUntil)
+                        .slice(0, 8);
+
+                    const expiryAlertsCtx = document.getElementById('expiryAlertsChart').getContext('2d');
+                    new Chart(expiryAlertsCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: sortedExpiryData.map(med => 
+                                `${med.medicine_name} (${formatDateForDisplay(med.expiry_date)})`
+                            ) || ['No Data'],
+                            datasets: [{
+                                label: 'Days until expiry',
+                                data: sortedExpiryData.map(med => med.daysUntil) || [0],
+                                backgroundColor: blueColor,
+                                borderRadius: 5
+                            }]
+                        },
+                        options: {
+                            ...chartOptions,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            },
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `${context.raw} days until expiry`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    // Upcoming Checkups
+                    const upcomingCheckups = checkups
+                        .filter(checkup => checkup.appointment_datetime)
+                        .map(checkup => ({
+                            ...checkup,
+                            daysUntil: getDaysUntil(checkup.appointment_datetime)
+                        }))
+                        .filter(checkup => checkup.daysUntil >= 0)
+                        .slice(0, 8);
+
+                    const checkupsCtx = document.getElementById('stockUsageChart').getContext('2d');
+                    new Chart(checkupsCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: upcomingCheckups.map(checkup => 
+                                `${checkup.doctor_name} (${formatDateForDisplay(checkup.appointment_datetime)})`
+                            ) || ['No Data'],
+                            datasets: [{
+                                label: 'Days until appointment',
+                                data: upcomingCheckups.map(checkup => checkup.daysUntil) || [0],
+                                backgroundColor: blueColor,
+                                borderRadius: 5
+                            }]
+                        },
+                        options: {
+                            ...chartOptions,
+                            indexAxis: 'y',
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    // Most Prescribed Medicines by Time Slots
+                    const medicinesByTimeSlot = {};
+                    prescriptionMedicines.forEach(med => {
+                        if (med.time_to_take && med.medicine_name) {
+                            const timeSlots = med.time_to_take.split(',').map(t => t.trim());
+                            timeSlots.forEach(time => {
+                                try {
+                                    const [hours] = time.split(':');
+                                    if (!isNaN(hours)) {
+                                        const period = parseInt(hours) < 12 ? 'Morning' : 
+                                                     parseInt(hours) < 17 ? 'Afternoon' : 
+                                                     parseInt(hours) < 21 ? 'Evening' : 'Night';
+                                        
+                                        if (!medicinesByTimeSlot[period]) {
+                                            medicinesByTimeSlot[period] = {};
+                                        }
+                                        medicinesByTimeSlot[period][med.medicine_name] = 
+                                            (medicinesByTimeSlot[period][med.medicine_name] || 0) + 1;
+                                    }
+                                } catch (error) {
+                                    console.error('Error processing time slot:', time, error);
+                                }
+                            });
+                        }
+                    });
+
+                    // Get top medicines for each time slot
+                    const topMedicinesBySlot = {};
+                    Object.entries(medicinesByTimeSlot).forEach(([slot, medicines]) => {
+                        topMedicinesBySlot[slot] = Object.entries(medicines)
+                            .sort(([,a], [,b]) => b - a)
+                            .slice(0, 5)
+                            .reduce((acc, [med, count]) => {
+                                acc[med] = count;
+                                return acc;
+                            }, {});
+                    });
+
+                    const prescribedMedicinesCtx = document.getElementById('prescribedMedicinesChart').getContext('2d');
+                    new Chart(prescribedMedicinesCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: Object.keys(topMedicinesBySlot),
+                            datasets: Object.entries(
+                                Object.values(topMedicinesBySlot)
+                                    .reduce((acc, slotMeds) => {
+                                        Object.entries(slotMeds).forEach(([med, count]) => {
+                                            if (!acc[med]) acc[med] = [];
+                                            acc[med].push(count);
+                                        });
+                                        return acc;
+                                    }, {})
+                            )
+                            .map(([medicine, counts], index) => ({
+                                label: medicine,
+                                data: counts,
+                                backgroundColor: [
+                                    '#3498db',
+                                    '#2980b9',
+                                    '#1f618d',
+                                    '#154360',
+                                    '#0a2942'
+                                ][index % 5],
+                                borderRadius: 5
+                            }))
+                            .slice(0, 5)
+                        },
+                        options: {
+                            ...chartOptions,
+                            scales: {
+                                x: {
+                                    stacked: true
+                                },
+                                y: {
+                                    stacked: true,
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    position: 'right',
+                                    labels: {
+                                        color: getComputedStyle(document.body).getPropertyValue('--text-color'),
+                                        padding: 12,
+                                        font: {
+                                            size: 12
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `${context.dataset.label}: ${context.raw} times`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    // Doctor Visit Frequency by Location
+                    const locationVisits = checkups.reduce((acc, checkup) => {
+                        if (checkup.clinic_location) {
+                            acc[checkup.clinic_location] = (acc[checkup.clinic_location] || 0) + 1;
+                        }
+                        return acc;
+                    }, {});
+
+                    const topLocations = Object.entries(locationVisits)
+                        .sort(([,a], [,b]) => b - a)
+                        .slice(0, 8);
+
+                    const doctorVisitsCtx = document.getElementById('doctorVisitsChart').getContext('2d');
+                    new Chart(doctorVisitsCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: topLocations.map(([location]) => location),
+                            datasets: [{
+                                data: topLocations.map(([,count]) => count),
+                                backgroundColor: [
+                                    '#3498db',
+                                    '#2980b9',
+                                    '#1f618d',
+                                    '#154360',
+                                    '#0a2942',
+                                    '#2471a3',
+                                    '#1a5276',
+                                    '#1b4f72'
+                                ]
+                            }]
+                        },
+                        options: {
+                            plugins: {
+                                legend: {
+                                    position: 'right',
+                                    labels: {
+                                        color: getComputedStyle(document.body).getPropertyValue('--text-color'),
+                                        padding: 12,
+                                        font: {
+                                            size: 12
+                                        }
+                                    },
+                                    display: true,
+                                    overflow: 'scroll'
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `${context.raw} visits`;
+                                        }
+                                    }
+                                }
+                            },
+                            layout: {
+                                padding: 20
+                            },
+                            scales: {
+                                x: {
+                                    display: false
+                                },
+                                y: {
+                                    display: false
+                                }
+                            }
+                        }
+                    });
+
+                } catch (error) {
+                    console.error('Error initializing charts:', error);
+                    showError('Error loading charts');
+                }
+            }
+
+            // Helper function to show errors
+            function showError(message) {
+                const errorDiv = document.createElement('div');
+                errorDiv.style.color = 'red';
+                errorDiv.style.padding = '20px';
+                errorDiv.style.textAlign = 'center';
+                errorDiv.textContent = message;
+                document.querySelector('.stats-container').prepend(errorDiv);
+            }
+
+            // Navigation function
+            function redirectToHome() {
+                try {
+                    window.location = 'index.html';
+                } catch (error) {
+                    console.error('Navigation error:', error);
+                    // Fallback
+                    window.location.href = 'index.html';
+                }
+            }
+
+            // Initialize charts when the page loads
+            document.addEventListener('DOMContentLoaded', initializeCharts);
+
+            // Update chart options on resize
+            window.addEventListener('resize', () => {
+                const isMobile = window.innerWidth <= 768;
+                const isVerySmall = window.innerWidth <= 480;
+                
+                Object.values(Chart.instances).forEach(chart => {
+                    if (chart.options.plugins && chart.options.plugins.legend) {
+                        chart.options.plugins.legend.position = isMobile ? 'bottom' : 'right';
+                        chart.options.plugins.legend.labels.boxWidth = isMobile ? 10 : 12;
+                        chart.options.plugins.legend.labels.padding = isMobile ? 8 : 15;
+                        chart.options.plugins.legend.labels.font.size = isMobile ? 10 : 12;
+                    }
+                    
+                    if (chart.options.plugins && chart.options.plugins.tooltip) {
+                        chart.options.plugins.tooltip.padding = isMobile ? 8 : 12;
+                        chart.options.plugins.tooltip.titleFont.size = isMobile ? 11 : 13;
+                        chart.options.plugins.tooltip.bodyFont.size = isMobile ? 10 : 12;
+                    }
+
+                    if (chart.options.scales) {
+                        if (chart.options.scales.x) {
+                            chart.options.scales.x.ticks.maxRotation = isVerySmall ? 45 : 0;
+                            chart.options.scales.x.ticks.minRotation = isVerySmall ? 45 : 0;
+                            chart.options.scales.x.ticks.font.size = isVerySmall ? 10 : 12;
+                            chart.options.scales.x.grid.display = !isVerySmall;
+                        }
+                        if (chart.options.scales.y) {
+                            chart.options.scales.y.ticks.font.size = isVerySmall ? 10 : 12;
+                            chart.options.scales.y.grid.display = !isVerySmall;
+                        }
+                    }
+
+                    chart.options.interaction = {
+                        mode: isMobile ? 'nearest' : 'index',
+                        intersect: false
+                    };
+                    
+                    chart.update();
+                });
+            });
+        </script>
+    </div>
+    <script src="dawadost.js"></script>
+
+</body>
+</html>

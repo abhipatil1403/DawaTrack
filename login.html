@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="google-site-verification" content="TwYX81CHwKmlDdxkjn0lKHT9RnuLCUc29PUfSYZXxHU" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" type="image/png" href="images/logo.png">
+    <title>DawaTrack - Login</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
+    <!-- Primary Meta Tags -->
+    <title>DawaTrack - Medicine Tracking and Reminder System</title>
+    <meta name="title" content="DawaTrack - Medicine Tracking and Reminder System">
+    <meta name="description" content="DawaTrack helps you track your medications, set reminders, and manage your health journey effectively. Never miss a dose with our smart reminder system.">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://dawatrack.netlify.app/">
+    <meta property="og:title" content="DawaTrack - Medicine Tracking and Reminder System">
+    <meta property="og:description" content="Track your medications, set reminders, and manage your health journey effectively. Never miss a dose with our smart reminder system.">
+    <meta property="og:image" content="https://dawatrack.netlify.app/images/logo.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://dawatrack.netlify.app/">
+    <meta property="twitter:title" content="DawaTrack - Medicine Tracking and Reminder System">
+    <meta property="twitter:description" content="Track your medications, set reminders, and manage your health journey effectively. Never miss a dose with our smart reminder system.">
+    <meta property="twitter:image" content="https://dawatrack.netlify.app/images/logo.png">
+
+    <!-- Mobile optimization -->
+    <meta name="theme-color" content="#ffffff"/>
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- Schema.org markup -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "DawaTrack",
+      "description": "Medicine tracking and reminder system to help manage your health journey effectively",
+      "applicationCategory": "HealthApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
+
+    <style>
+        .auth-container {
+            max-width: 400px;
+            width: 90%;
+            margin: 40px auto 15px;
+            padding: 1.5rem;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            min-height: 200px;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .auth-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .auth-header .logo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border-color);
+            justify-content: center;
+            gap: 1rem;
+            padding: 0 0.5rem;
+        }
+
+        .auth-tab {
+            min-width: 80px;
+            padding: 0.6rem;
+            text-align: center;
+            cursor: pointer;
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .auth-tab.active {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            margin-bottom: -2px;
+        }
+
+        .auth-form {
+            display: none;
+            overflow-y: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            text-align: center;
+            padding-bottom: 2rem;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+            font-size: 16px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 16px;
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 0.8rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+            max-width: 200px;
+            margin: 0 auto;
+            height: 45px;
+            display: block;
+        }
+
+        .auth-btn:hover {
+            background-color: var(--hover-color);
+        }
+
+        .forgot-password {
+            text-align: center;
+            margin: 1.2rem 0 2rem;
+        }
+
+        .forgot-password a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+
+        .social-login {
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        .social-login p {
+            margin-bottom: 0.75rem;
+            color: var(--text-color);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .social-login p::before,
+        .social-login p::after {
+            content: "";
+            height: 1px;
+            background-color: var(--border-color);
+            flex: 1;
+            max-width: 80px;
+        }
+
+        .social-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: transparent;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            white-space: nowrap;
+            max-width: 250px;
+            margin: 0 auto;
+        }
+
+        .social-btn i {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        .social-btn:hover {
+            background-color: var(--input-bg);
+            border-color: var(--primary-color);
+        }
+
+        .error-message {
+            color: var(--danger-color);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            display: block;
+            min-height: 1.2em;
+        }
+
+        body {
+            overflow: hidden;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+        }
+
+        html {
+            overflow: hidden;
+            height: 100%;
+        }
+
+        @media (max-width: 480px) {
+            .auth-container {
+                margin: 30px auto 10px;
+                padding: 1rem;
+                max-height: calc(100vh - 120px);
+            }
+
+            .auth-header .logo {
+                gap: 8px;
+            }
+
+            .auth-header .logo img {
+                width: 40px;
+                height: 40px;
+            }
+
+            .form-group label {
+                font-size: 0.9rem;
+            }
+
+            .forgot-password {
+                margin: 1.2rem 0 2rem;
+            }
+
+            .forgot-password a {
+                font-size: 0.85rem;
+            }
+        }
+
+        input {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            border-radius: 6px;
+        }
+
+        footer a:hover {
+            opacity: 0.9 !important;
+        }
+
+        /* Update password container styles */
+        .password-container {
+            position: relative;
+            width: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-container input {
+            width: 100%;
+            padding-right: 45px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+
+        .password-toggle i {
+            font-size: 1.1rem;
+        }
+
+        .password-toggle:hover {
+            opacity: 0.8;
+        }
+
+        /* Remove any browser styles that might interfere */
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-header">
+            <div class="logo">
+                <img src="images/logo.png" alt="DawaTrack Logo" class="logo-img">
+                <span>DawaTrack</span>
+            </div>
+        </div>
+
+        <div class="auth-tabs">
+            <div class="auth-tab active" data-tab="login">Login</div>
+            <div class="auth-tab" data-tab="signup">Sign Up</div>
+        </div>
+
+        <form class="auth-form active" id="loginForm">
+            <div class="form-group">
+                <label for="loginEmail">Email</label>
+                <input type="email" id="loginEmail" required>
+                <div class="error-message" id="loginEmailError"></div>
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <div class="password-container">
+                    <input type="password" id="loginPassword" required>
+                    <button type="button" class="password-toggle" data-for="loginPassword">
+                        <i class="fas fa-eye-low-vision"></i>
+                    </button>
+                </div>
+                <div class="error-message" id="loginPasswordError"></div>
+            </div>
+            <div class="forgot-password">
+                <a href="#">Forgot Password?</a>
+            </div>
+            <button type="submit" class="auth-btn">Login</button>
+            <div class="social-login">
+                <p>or</p>
+                <button type="button" class="social-btn" id="googleLoginBtn">
+                    <i class="fab fa-google"></i> Continue with Google
+                </button>
+            </div>
+        </form>
+
+        <form class="auth-form" id="signupForm">
+            <div class="form-group">
+                <label for="signupName">Full Name</label>
+                <input type="text" id="signupName" required>
+                <div class="error-message" id="signupNameError"></div>
+            </div>
+            <div class="form-group">
+                <label for="signupEmail">Email</label>
+                <input type="email" id="signupEmail" required>
+                <div class="error-message" id="signupEmailError"></div>
+            </div>
+            <div class="form-group">
+                <label for="signupPassword">Password</label>
+                <div class="password-container">
+                    <input type="password" id="signupPassword" required>
+                    <button type="button" class="password-toggle" data-for="signupPassword">
+                        <i class="fas fa-eye-low-vision"></i>
+                    </button>
+                </div>
+                <div class="error-message" id="signupPasswordError"></div>
+            </div>
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <div class="password-container">
+                    <input type="password" id="confirmPassword" required>
+                    <button type="button" class="password-toggle" data-for="confirmPassword">
+                        <i class="fas fa-eye-low-vision"></i>
+                    </button>
+                </div>
+                <div class="error-message" id="confirmPasswordError"></div>
+            </div>
+            <button type="submit" class="auth-btn">Sign Up</button>
+            <div class="social-login">
+                <p>or</p>
+                <button type="button" class="social-btn" id="googleSignupBtn">
+                    <i class="fab fa-google"></i> Continue with Google
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Initialize Supabase client using shared configuration
+        const supabase = window.supabase.createClient(
+            window.SUPABASE_CONFIG.url,
+            window.SUPABASE_CONFIG.anonKey
+        );
+
+        // Google OAuth configuration
+        const GOOGLE_CLIENT_ID = '887243220092-3vj3tklll6meojqrcdcgdrc48568fnh5.apps.googleusercontent.com';
+
+        // Add loading state function
+        function setButtonLoading(button, isLoading) {
+            if (isLoading) {
+                button.classList.add('btn-loading');
+                button.disabled = true;
+            } else {
+                button.classList.remove('btn-loading');
+                button.disabled = false;
+            }
+        }
+
+        // Initialize Google Sign-In
+        function initializeGoogleSignIn() {
+            const handleGoogleLogin = async () => {
+                try {
+                    const button = document.querySelector('.social-btn');
+                    setButtonLoading(button, true);
+                    
+                    const { data, error } = await supabase.auth.signInWithOAuth({
+                        provider: 'google',
+                        options: {
+                            redirectTo: 'https://dawatrack.netlify.app',
+                            queryParams: {
+                                app_name: 'DawaTrack'
+                            }
+                        }
+                    });
+
+                    if (error) throw error;
+                } catch (error) {
+                    console.error('Google sign-in error:', error);
+                    const activeForm = document.querySelector('.auth-form.active');
+                    const errorElement = activeForm.querySelector('.error-message');
+                    if (errorElement) {
+                        errorElement.textContent = error.message;
+                    }
+                }
+            };
+
+            // Add click handlers for the Google buttons
+            document.getElementById('googleLoginBtn').addEventListener('click', handleGoogleLogin);
+            document.getElementById('googleSignupBtn').addEventListener('click', handleGoogleLogin);
+        }
+
+        // Update the password toggle function
+        function togglePassword(button) {
+            const input = document.getElementById(button.dataset.for);
+            const icon = button.querySelector('i');
+            
+            if (input && icon) {
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('fa-eye-low-vision');
+                    icon.classList.add('fa-eye');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-low-vision');
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Google Sign-In
+            if (window.google && window.google.accounts) {
+                initializeGoogleSignIn();
+            } else {
+                // Wait for Google Sign-In to load
+                const checkGoogleSignIn = () => {
+                    if (window.google && window.google.accounts) {
+                        initializeGoogleSignIn();
+                    } else {
+                        setTimeout(checkGoogleSignIn, 100);
+                    }
+                };
+                checkGoogleSignIn();
+            }
+
+            document.querySelectorAll('.password-toggle').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    togglePassword(button);
+                });
+            });
+
+            // Check if user is already logged in
+            checkUser();
+
+            async function checkUser() {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                console.log('Check user result:', { user, error });
+                if (user) {
+                    window.location.href = 'index.html';
+                }
+            }
+
+            // Tab switching functionality
+            const tabs = document.querySelectorAll('.auth-tab');
+            const forms = document.querySelectorAll('.auth-form');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    forms.forEach(f => f.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.querySelector(`.auth-form#${tab.dataset.tab}Form`).classList.add('active');
+                });
+            });
+
+            // Login form submission
+            const loginForm = document.getElementById('loginForm');
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const submitButton = loginForm.querySelector('button[type="submit"]');
+                setButtonLoading(submitButton, true);
+
+                try {
+                    const email = document.getElementById('loginEmail').value;
+                    const password = document.getElementById('loginPassword').value;
+
+                    const { data, error } = await supabase.auth.signInWithPassword({
+                        email,
+                        password
+                    });
+
+                    if (error) throw error;
+
+                    if (data.user) {
+                        if (!data.user.confirmed_at && !data.user.email_confirmed_at) {
+                            loginForm.innerHTML = `
+                                <div style="text-align: center; padding: 2rem;">
+                                    <i class="fas fa-envelope" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                                    <h2 style="margin-bottom: 1rem;">Email Not Confirmed</h2>
+                                    <p style="color: #ccc; margin-bottom: 1.5rem;">
+                                        Please check your email and click the confirmation link to activate your account.<br>
+                                        <small>Can't find the email? Check your spam folder.</small>
+                                    </p>
+                                    <button onclick="window.location.reload()" class="auth-btn">Try Again</button>
+                                </div>
+                            `;
+                            return;
+                        }
+                        window.location.href = 'index.html';
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    document.getElementById('loginEmailError').textContent = error.message;
+                } finally {
+                    setButtonLoading(submitButton, false);
+                }
+            });
+
+            // Signup form submission
+            const signupForm = document.getElementById('signupForm');
+            signupForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const submitButton = signupForm.querySelector('button[type="submit"]');
+                setButtonLoading(submitButton, true);
+
+                try {
+                    const name = document.getElementById('signupName').value;
+                    const email = document.getElementById('signupEmail').value;
+                    const password = document.getElementById('signupPassword').value;
+                    const confirmPassword = document.getElementById('confirmPassword').value;
+
+                    // Clear previous error messages
+                    document.getElementById('signupEmailError').textContent = '';
+                    document.getElementById('signupPasswordError').textContent = '';
+                    document.getElementById('confirmPasswordError').textContent = '';
+
+                    // Validate all fields
+                    let hasErrors = false;
+
+                    if (password !== confirmPassword) {
+                        document.getElementById('confirmPasswordError').textContent = 'Passwords do not match';
+                        hasErrors = true;
+                    }
+
+                    if (password.length < 6) {
+                        document.getElementById('signupPasswordError').textContent = 'Password must be at least 6 characters long';
+                        hasErrors = true;
+                    }
+
+                    if (!name.trim()) {
+                        document.getElementById('signupNameError').textContent = 'Name is required';
+                        hasErrors = true;
+                    }
+
+                    if (!email.includes('@')) {
+                        document.getElementById('signupEmailError').textContent = 'Please enter a valid email';
+                        hasErrors = true;
+                    }
+
+                    if (hasErrors) {
+                        return;
+                    }
+
+                    const { data, error } = await supabase.auth.signUp({
+                        email,
+                        password,
+                        options: {
+                            data: {
+                                full_name: name
+                            },
+                            emailRedirectTo: 'https://dawatrack.netlify.app/email-confirmed.html'
+                        }
+                    });
+
+                    if (error) throw error;
+
+                    if (data?.user?.identities?.length === 0) {
+                        document.getElementById('signupEmailError').textContent = 'Email already exists. Please login instead.';
+                        setTimeout(() => {
+                            document.querySelector('.auth-tab[data-tab="login"]').click();
+                            document.getElementById('loginEmail').value = email;
+                        }, 2000);
+                        return;
+                    }
+
+                    if (data.user) {
+                        const { error: profileError } = await supabase
+                            .from('profiles')
+                            .upsert({
+                                id: data.user.id,
+                                updated_at: new Date().toISOString()
+                            }, {
+                                onConflict: 'id',
+                                returning: 'minimal'
+                            });
+
+                        if (profileError) {
+                            console.error('Error saving to profiles:', profileError);
+                            document.getElementById('signupEmailError').textContent = 'Error creating profile';
+                        }
+                    }
+
+                    signupForm.innerHTML = `
+                        <div style="text-align: center; padding: 2rem;">
+                            <i class="fas fa-envelope" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                            <h2 style="margin-bottom: 1rem;">Check your email</h2>
+                            <p style="color: #ccc; margin-bottom: 0.5rem;">
+                                We've sent a confirmation link to <strong>${email}</strong>.<br>
+                                Please check your email and click the link to activate your account.
+                            </p>
+                            <p style="color: #999; font-size: 0.9rem; margin-top: 1rem;">
+                                Can't find the email? Check your spam folder.
+                            </p>
+                        </div>
+                    `;
+                } catch (error) {
+                    console.error('Signup error:', error);
+                    if (error.message.includes('User already registered')) {
+                        document.getElementById('signupEmailError').textContent = 'Email already exists. Please login instead.';
+                        setTimeout(() => {
+                            document.querySelector('.auth-tab[data-tab="login"]').click();
+                            document.getElementById('loginEmail').value = email;
+                        }, 2000);
+                    } else {
+                        document.getElementById('signupEmailError').textContent = error.message;
+                    }
+                } finally {
+                    setButtonLoading(submitButton, false);
+                }
+            });
+
+            // Add real-time password confirmation check
+            document.getElementById('confirmPassword').addEventListener('input', function() {
+                const password = document.getElementById('signupPassword').value;
+                const confirmPassword = this.value;
+                const errorElement = document.getElementById('confirmPasswordError');
+                
+                if (confirmPassword && password !== confirmPassword) {
+                    errorElement.textContent = 'Passwords do not match';
+                } else {
+                    errorElement.textContent = '';
+                }
+            });
+
+            document.getElementById('signupPassword').addEventListener('input', function() {
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const errorElement = document.getElementById('confirmPasswordError');
+                
+                if (confirmPassword && this.value !== confirmPassword) {
+                    errorElement.textContent = 'Passwords do not match';
+                } else {
+                    errorElement.textContent = '';
+                }
+            });
+
+            // Forgot Password
+            const forgotPasswordLink = document.querySelector('.forgot-password a');
+            forgotPasswordLink.addEventListener('click', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('loginEmail').value;
+
+                if (!email) {
+                    document.getElementById('loginEmailError').textContent = 'Please enter your email';
+                    document.getElementById('loginEmailError').style.display = 'block';
+                    return;
+                }
+
+                try {
+                    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                        redirectTo: `${window.location.origin}/reset-password.html`,
+                    });
+
+                    if (error) throw error;
+
+                    alert('Password reset instructions have been sent to your email');
+                } catch (error) {
+                    document.getElementById('loginEmailError').textContent = error.message;
+                    document.getElementById('loginEmailError').style.display = 'block';
+                }
+            });
+        });
+    </script>
+
+    <!-- Replace the existing footer with this one -->
+    <footer style="background-color: transparent; padding: 0.5rem; text-align: center; position: fixed; bottom: 0; width: 100%; font-size: 0.8rem;">
+        <a href="privacy_policy.html" style="color: var(--text-color); text-decoration: none; opacity: 0.6; transition: opacity 0.3s ease;">
+            Privacy Policy
+        </a>
+    </footer>
+</body>
+</html> 

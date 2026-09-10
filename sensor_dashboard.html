@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DawaTrack - Sensor Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="images/logo.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <style>
+        :root {
+            --primary-color: #00b6db;
+            --background-color: #161616;
+            --text-color: #ffffff;
+            --card-bg: #242424;
+            --hover-color: #008db0;
+            --input-bg: #2a2a2a;
+            --border-color: #333;
+            --danger-color: #dc3545;
+            --danger-hover-color: #c82333;
+            --success-color: #28a745;
+            --success-hover-color: #218838;
+            --text-light: white;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: var(--card-bg);
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+            border-radius: 10px;
+        }
+        
+        h1 {
+            margin: 0;
+            color: var(--primary-color);
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+        }
+        
+        h1 i {
+            margin-right: 10px;
+            color: var(--danger-color);
+        }
+        
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .gauge-row {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            margin-bottom: 0;
+        }
+        
+        .gauge-row > div {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        
+        .chart-card {
+            grid-column: 1 / -1;
+            margin-top: 240px;
+            background: none;
+            box-shadow: none;
+            border-radius: 0;
+            padding: 0;
+        }
+        
+        .dashboard-card {
+            background: none;
+            border: none;
+            box-shadow: none;
+            border-radius: 0;
+            padding: 0;
+            position: static;
+            overflow: visible;
+            height: auto;
+        }
+        
+        .dashboard-card h3 {
+            background: none;
+            border: none;
+            box-shadow: none;
+            border-radius: 0;
+            padding: 0 0 10px 0;
+            margin-bottom: 10px;
+        }
+        
+        .gauge-container {
+            position: relative;
+            width: 100%;
+            max-width: 220px;
+            height: 180px;
+            margin: 30px auto 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0 0 20px 0;
+        }
+        
+        .gauge-value-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            margin-top: 10px;
+            margin-bottom: 0;
+        }
+        
+        .gauge-value {
+            font-size: 38px;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-align: center;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-right: 6px;
+        }
+        
+        .gauge-unit {
+            font-size: 18px;
+            color: var(--text-color);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 0;
+        }
+        
+        .gauge-status {
+            margin-top: 18px;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            background: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        .gauge-status i {
+            font-size: 18px;
+        }
+
+        .status-normal {
+            background: linear-gradient(145deg, #28a745, #218838);
+            color: white;
+        }
+        
+        .status-warning {
+            background: linear-gradient(145deg, #f39c12, #e67e22);
+            color: white;
+        }
+        
+        .status-danger {
+            background: linear-gradient(145deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .pulse {
+            animation: pulse 0.5s ease-in-out;
+        }
+        
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+        
+        .data-source {
+            font-size: 12px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+
+        
+        #lastUpdated {
+            text-align: right;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .reading-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 5px 10px;
+            border-radius: 20px;
+        }
+        
+        .status-indicator i {
+            margin-right: 5px;
+        }
+        
+        .reading-time {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .loading-container {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(22, 22, 22, 0.85);
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary-color);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 18px;
+            color: var(--primary-color);
+        }
+        
+        .error-message {
+            background-color: rgba(220, 53, 69, 0.2);
+            color: var(--danger-color);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .error-message i {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+        
+
+        
+        @media (max-width: 900px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+            .gauge-row {
+                grid-template-columns: 1fr;
+            }
+            .gauge-container {
+                max-width: 100%;
+            }
+        }
+        
+        .dashboard-container h3,
+        .gauge-row h3,
+        .chart-card h3 {
+            color: var(--primary-color) !important;
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 0;
+            text-align: center;
+        }
+        .dashboard-container h3 i,
+        .gauge-row h3 i,
+        .chart-card h3 i {
+            color: var(--primary-color) !important;
+        }
+        
+        .dashboard-title-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 40px;
+            margin-bottom: 24px;
+        }
+        .main-dashboard-title {
+            text-align: center;
+            color: var(--primary-color);
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+        }
+        .main-dashboard-title i {
+            color: var(--primary-color);
+            font-size: 2.2rem;
+        }
+        .last-updated-main {
+            text-align: center;
+            color: var(--text-color);
+            font-size: 1.18rem;
+            font-weight: 500;
+            margin-bottom: 32px;
+            margin-top: -12px;
+            opacity: 0.85;
+            letter-spacing: 0.5px;
+        }
+        .chart-card h3 {
+            margin-top: 200px !important;
+            margin-bottom: 50px !important;
+        }
+        .home-btn {
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            margin: 12px;
+            height: 48px;
+            min-width: 48px;
+            z-index: 1000;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .home-btn i {
+            font-size: 24px;
+            color: var(--primary-color);
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            header {
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .main-dashboard-title {
+                font-size: 1.8rem;
+                flex-direction: column;
+                gap: 8px;
+                line-height: 1.2;
+            }
+
+            .main-dashboard-title i {
+                font-size: 1.6rem;
+                margin-bottom: 4px;
+            }
+
+            .dashboard-container {
+                gap: 15px;
+            }
+
+            .gauge-row {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .gauge-row > div:nth-child(2) h3 {
+                margin-top: 120px !important;
+            }
+
+            .gauge-container {
+                max-width: 200px;
+                height: 160px;
+                margin: 20px auto 0 auto;
+            }
+
+            .gauge-value {
+                font-size: 32px;
+            }
+
+            .gauge-unit {
+                font-size: 16px;
+            }
+
+            .gauge-status {
+                margin-top: 15px;
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+
+            .chart-card {
+                margin-top: 20px;
+            }
+
+            .header-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            #lastUpdated {
+                text-align: left;
+                margin-top: 5px;
+            }
+
+            .reading-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .status-indicator {
+                font-size: 13px;
+            }
+
+            .reading-time {
+                font-size: 11px;
+            }
+
+            .chart-card h3 {
+                margin-top: 200px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 8px;
+            }
+
+            header {
+                padding: 12px;
+                margin-bottom: 15px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .gauge-container {
+                max-width: 180px;
+                height: 150px;
+                margin: 15px auto 0 auto;
+            }
+
+            .gauge-value {
+                font-size: 28px;
+            }
+
+            .gauge-unit {
+                font-size: 14px;
+            }
+
+            .gauge-status {
+                margin-top: 12px;
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .chart-card {
+                margin-top: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button type="button" class="home-btn" onclick="window.location.href='index.html'" aria-label="Go to home">
+        <i class="fas fa-home" aria-hidden="true"></i>
+    </button>
+    <div class="dashboard-title-group">
+        <h1 class="main-dashboard-title">
+            <span>Sensor</span>
+            <span>Dashboard</span>
+        </h1>
+        <div id="lastUpdated" class="last-updated-main">Last Updated: --</div>
+    </div>
+    <div id="loading" class="loading-container">
+        <div class="spinner"></div>
+        <div class="loading-text">Loading sensor data...</div>
+    </div>
+    <div class="container">
+        <div id="error-message" class="error-message" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i> Unable to connect to Supabase. Check your Supabase URL and API key. Using sample data instead.
+        </div>
+
+        <div id="dashboard-container" class="dashboard-container" style="display: none;">
+            <div class="gauge-row">
+                <!-- Heart Rate Gauge -->
+                <div>
+                    <h3 style="margin-bottom: 0;"><i class="fas fa-heartbeat"></i> Heart Rate</h3>
+                    <div class="gauge-container">
+                        <canvas id="heartRateChart"></canvas>
+                        <div class="gauge-value-row">
+                            <span class="gauge-value" id="heartRateValue">--</span>
+                            <span class="gauge-unit">BPM</span>
+                        </div>
+                        <div id="heartRateStatus" class="gauge-status status-normal">
+                            <i class="fas fa-check-circle"></i> Normal
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SpO2 Gauge -->
+                <div>
+                    <h3 style="margin-bottom: 0;"><i class="fas fa-lungs"></i> Blood Oxygen (SpO2)</h3>
+                    <div class="gauge-container">
+                        <canvas id="spo2Chart"></canvas>
+                        <div class="gauge-value-row">
+                            <span class="gauge-value" id="spO2Value">--</span>
+                            <span class="gauge-unit">%</span>
+                        </div>
+                        <div id="spO2Status" class="gauge-status status-normal">
+                            <i class="fas fa-check-circle"></i> Normal
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Chart -->
+            <div class="chart-card">
+                <h3 style="margin-bottom: 0;"><i class="fas fa-chart-line"></i> Readings History</h3>
+                <div class="chart-container">
+                    <canvas id="historyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.5.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.3.4/dist/supabase.min.js"></script>
+    <script>
+        // Initialize Supabase client using shared configuration
+        const supabaseClient = supabase.createClient(
+            window.SUPABASE_CONFIG.url,
+            window.SUPABASE_CONFIG.anonKey
+        );
+        
+        // Chart objects
+        let historyChart;
+        let heartRateChart;
+        let spo2Chart;
+        let lastDataTimestamp = null;
+        // Add state tracking for previous values
+        let previousHeartRate = null;
+        let previousSpO2 = null;
+        let lastAlertTime = {
+            heartRate: 0,
+            spO2: 0
+        };
+        const ALERT_COOLDOWN = 60000; // 1 minute cooldown between alerts
+
+        // Initialize gauge charts with improved styling
+        function initializeGaugeCharts() {
+            // Heart Rate Gauge
+            const heartRateCtx = document.getElementById('heartRateChart').getContext('2d');
+            heartRateChart = new Chart(heartRateCtx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [0, 100],
+                        backgroundColor: [
+                            'rgba(52, 152, 219, 0.9)',
+                            'rgba(52, 152, 219, 0.1)'
+                        ],
+                        borderWidth: 0,
+                        circumference: 180,
+                        rotation: 270
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '85%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: false
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true
+                    }
+                }
+            });
+
+            // SpO2 Gauge
+            const spo2Ctx = document.getElementById('spo2Chart').getContext('2d');
+            spo2Chart = new Chart(spo2Ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [0, 100],
+                        backgroundColor: [
+                            'rgba(231, 76, 60, 0.9)',
+                            'rgba(231, 76, 60, 0.1)'
+                        ],
+                        borderWidth: 0,
+                        circumference: 180,
+                        rotation: 270
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '85%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: false
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true
+                    }
+                }
+            });
+        }
+
+        // Initialize history chart
+        function initializeHistoryChart() {
+            const ctx = document.getElementById('historyChart').getContext('2d');
+            historyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Heart Rate',
+                            data: [],
+                            borderColor: 'rgba(52, 152, 219, 1)',
+                            tension: 0.4,
+                            fill: false
+                        },
+                        {
+                            label: 'SpO2',
+                            data: [],
+                            borderColor: 'rgba(231, 76, 60, 1)',
+                            tension: 0.4,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        // Add email notification function with cooldown and better error handling
+        async function sendAlertEmail(readingType, value) {
+            const currentTime = Date.now();
+            // Check if enough time has passed since the last alert
+            if (currentTime - lastAlertTime[readingType] < ALERT_COOLDOWN) {
+                console.log(`Skipping ${readingType} alert - cooldown period`);
+                return;
+            }
+
+            try {
+                // Get current session
+                const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+                if (sessionError || !session) {
+                    console.error('No active session found:', sessionError);
+                    return;
+                }
+
+                // Get user's email from profile
+                const { data: profile, error: profileError } = await supabaseClient
+                    .from('profiles')
+                    .select('email')
+                    .eq('id', session.user.id)
+                    .single();
+                
+                if (profileError || !profile?.email) {
+                    console.error('No email found for user:', profileError);
+                    return;
+                }
+
+                // Prepare email content based on reading type
+                const emailContent = {
+                    heartRate: {
+                        subject: 'Heart Rate Alert',
+                        message: `Your heart rate reading of ${value} BPM is outside the normal range. Please check your health status.`
+                    },
+                    spO2: {
+                        subject: 'SpO2 Alert',
+                        message: `Your SpO2 reading of ${value}% is outside the normal range. Please check your health status.`
+                    }
+                }[readingType];
+
+                if (!emailContent) {
+                    console.error('Invalid reading type:', readingType);
+                    return;
+                }
+
+                // Try to send email using Edge Function
+                try {
+                    const response = await fetch(`${window.SUPABASE_CONFIG.url}/functions/v1/send-email`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${session.access_token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            to: profile.email,
+                            subject: emailContent.subject,
+                            message: emailContent.message
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.text();
+                        console.error('Email service error:', {
+                            status: response.status,
+                            statusText: response.statusText,
+                            error: errorData
+                        });
+                        throw new Error(`Email service error: ${response.status} ${response.statusText}`);
+                    }
+
+                    // Update last alert time only on successful email send
+                    lastAlertTime[readingType] = currentTime;
+                    console.log(`${readingType} alert email sent successfully to ${profile.email}`);
+                } catch (emailError) {
+                    console.error('Failed to send email:', emailError);
+                    // Store the alert in local storage as a fallback
+                    const alerts = JSON.parse(localStorage.getItem('pendingAlerts') || '[]');
+                    alerts.push({
+                        type: readingType,
+                        value: value,
+                        timestamp: currentTime,
+                        email: profile.email,
+                        subject: emailContent.subject,
+                        message: emailContent.message
+                    });
+                    localStorage.setItem('pendingAlerts', JSON.stringify(alerts));
+                    console.log('Alert stored locally for retry');
+                }
+            } catch (error) {
+                console.error('Error in alert system:', error);
+            }
+        }
+
+        // Add function to retry failed alerts
+        async function retryFailedAlerts() {
+            try {
+                const alerts = JSON.parse(localStorage.getItem('pendingAlerts') || '[]');
+                if (alerts.length === 0) return;
+
+                const currentTime = Date.now();
+                const newAlerts = [];
+
+                for (const alert of alerts) {
+                    // Only retry alerts that are less than 24 hours old
+                    if (currentTime - alert.timestamp < 24 * 60 * 60 * 1000) {
+                        try {
+                            const response = await fetch(`${window.SUPABASE_CONFIG.url}/functions/v1/send-email`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    to: alert.email,
+                                    subject: alert.subject,
+                                    message: alert.message
+                                })
+                            });
+
+                            if (!response.ok) {
+                                newAlerts.push(alert); // Keep failed alerts for next retry
+                            } else {
+                                console.log(`Successfully sent retry alert for ${alert.type}`);
+                            }
+                        } catch (error) {
+                            console.error('Error retrying alert:', error);
+                            newAlerts.push(alert); // Keep failed alerts for next retry
+                        }
+                    }
+                }
+
+                localStorage.setItem('pendingAlerts', JSON.stringify(newAlerts));
+            } catch (error) {
+                console.error('Error in retry system:', error);
+            }
+        }
+
+        // Update gauge values with improved logic
+        function updateGaugeValues(heartRate, spo2) {
+            // Heart Rate Gauge Update
+            if (heartRateChart) {
+                // Normalize heart rate to 0-200 BPM range
+                const heartRateValue = Math.min(Math.max(heartRate, 0), 200);
+                const heartRatePercentage = (heartRateValue / 200) * 100;
+                
+                // Update gauge color based on heart rate zones
+                let heartRateColor;
+                let isHeartRateAbnormal = false;
+                if (heartRateValue <= 60) {
+                    heartRateColor = 'rgba(52, 152, 219, 0.9)'; // Blue for Bradycardia
+                    isHeartRateAbnormal = true;
+                } else if (heartRateValue <= 100) {
+                    heartRateColor = 'rgba(46, 204, 113, 0.9)'; // Green for Normal
+                } else if (heartRateValue <= 120) {
+                    heartRateColor = 'rgba(243, 156, 18, 0.9)'; // Orange for Elevated
+                    isHeartRateAbnormal = true;
+                } else {
+                    heartRateColor = 'rgba(231, 76, 60, 0.9)'; // Red for Tachycardia
+                    isHeartRateAbnormal = true;
+                }
+
+                // Only send alert if value has changed significantly or crossed threshold
+                if (isHeartRateAbnormal && 
+                    (previousHeartRate === null || 
+                     Math.abs(heartRateValue - previousHeartRate) > 5)) {
+                    sendAlertEmail('heartRate', Math.round(heartRateValue));
+                }
+                previousHeartRate = heartRateValue;
+
+                heartRateChart.data.datasets[0].backgroundColor[0] = heartRateColor;
+                heartRateChart.data.datasets[0].data = [heartRatePercentage, 100 - heartRatePercentage];
+                heartRateChart.update('none');
+                // Update value with animation
+                const valueElement = document.getElementById('heartRateValue');
+                valueElement.style.transform = 'scale(1.1)';
+                valueElement.textContent = Math.round(heartRateValue);
+                setTimeout(() => {
+                    valueElement.style.transform = 'scale(1)';
+                }, 200);
+            }
+
+            // SpO2 Gauge Update
+            if (spo2Chart) {
+                // Normalize SpO2 to 0-100% range
+                const spo2Value = Math.min(Math.max(spo2, 0), 100);
+                // Update gauge color based on SpO2 zones
+                let spo2Color;
+                let isSpO2Abnormal = false;
+                if (spo2Value < 90) {
+                    spo2Color = 'rgba(231, 76, 60, 0.9)'; // Red for Danger
+                    isSpO2Abnormal = true;
+                } else if (spo2Value < 95) {
+                    spo2Color = 'rgba(243, 156, 18, 0.9)'; // Orange for Caution
+                    isSpO2Abnormal = true;
+                } else {
+                    spo2Color = 'rgba(46, 204, 113, 0.9)'; // Green for Normal
+                }
+
+                // Only send alert if value has changed significantly or crossed threshold
+                if (isSpO2Abnormal && 
+                    (previousSpO2 === null || 
+                     Math.abs(spo2Value - previousSpO2) > 2)) {
+                    sendAlertEmail('spO2', Math.round(spo2Value));
+                }
+                previousSpO2 = spo2Value;
+
+                spo2Chart.data.datasets[0].backgroundColor[0] = spo2Color;
+                spo2Chart.data.datasets[0].data = [spo2Value, 100 - spo2Value];
+                spo2Chart.update('none');
+                // Update value with animation
+                const valueElement = document.getElementById('spO2Value');
+                valueElement.style.transform = 'scale(1.1)';
+                valueElement.textContent = Math.round(spo2Value);
+                setTimeout(() => {
+                    valueElement.style.transform = 'scale(1)';
+                }, 200);
+            }
+
+            // Update status indicators with new zones
+            updateStatusIndicator('heartRateStatus', heartRate, {
+                bradycardia: { min: 0, max: 60, color: 'status-warning', icon: 'heartbeat', text: 'Bradycardia' },
+                normal: { min: 60, max: 100, color: 'status-normal', icon: 'check-circle', text: 'Normal' },
+                elevated: { min: 100, max: 120, color: 'status-warning', icon: 'exclamation-circle', text: 'Elevated' },
+                tachycardia: { min: 120, max: 200, color: 'status-danger', icon: 'exclamation-triangle', text: 'Tachycardia' }
+            });
+
+            updateStatusIndicator('spO2Status', spo2, {
+                danger: { min: 0, max: 90, color: 'status-danger', icon: 'exclamation-triangle', text: 'Danger' },
+                caution: { min: 90, max: 95, color: 'status-warning', icon: 'exclamation-circle', text: 'Caution' },
+                normal: { min: 95, max: 100, color: 'status-normal', icon: 'check-circle', text: 'Normal' }
+            });
+        }
+
+        function updateStatusIndicator(elementId, value, thresholds) {
+            const element = document.getElementById(elementId);
+            let status = null;
+
+            // Determine status based on value
+            for (const [key, threshold] of Object.entries(thresholds)) {
+                if (value >= threshold.min && value <= threshold.max) {
+                    status = threshold;
+                    break;
+                }
+            }
+
+            // If no status matched, use the last status (for values above all ranges)
+            if (!status) {
+                const thresholdArray = Object.values(thresholds);
+                status = thresholdArray[thresholdArray.length - 1];
+            }
+
+            if (status) {
+                element.className = `gauge-status ${status.color}`;
+                element.innerHTML = `<i class="fas fa-${status.icon}"></i> ${status.text}`;
+                
+                // Add animation class
+                element.classList.add('pulse');
+                setTimeout(() => element.classList.remove('pulse'), 1000);
+            }
+        }
+
+        // Set up Supabase real-time subscription
+        function setupRealtimeSubscription() {
+            supabaseClient
+                .channel('sensor-data')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'sensor_data',
+                    },
+                    (payload) => {
+                        const newData = JSON.parse(payload.new);
+                        updateDashboard(newData, true);
+                        document.getElementById('dashboard-container').style.display = 'block';
+                        document.getElementById('error-message').style.display = 'none';
+                    }
+                )
+                .subscribe();
+            console.log('Supabase real-time subscription set up successfully');
+        }
+        
+        // Fetch initial data from Supabase
+        async function fetchData() {
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('dashboard-container').style.display = 'none';
+            document.getElementById('error-message').style.display = 'none';
+            
+            console.log('Fetching initial data from Supabase...');
+            
+            try {
+                // Query the sensor_readings table for the most recent readings (up to 20)
+                const { data, error } = await supabaseClient
+                    .from('sensor_readings')
+                    .select('*')
+                    .order('timestamp', { ascending: false })
+                    .limit(20);
+                
+                if (error) {
+                    throw error;
+                }
+                
+                if (data && data.length > 0) {
+                    console.log('Received initial data from Supabase:', data);
+                    
+                    // Process the data into the format our dashboard expects
+                    const sensorData = data.map(reading => ({
+                        timestamp: new Date(reading.timestamp || Date.now()),
+                        heartRate: reading.heart_rate,
+                        spO2: reading.spo2
+                    })).sort((a, b) => a.timestamp - b.timestamp);
+                    
+                    // Update the dashboard with the data
+                    updateDashboard(sensorData, true);
+                    
+                    // Update last updated time using the most recent reading
+                    const latestReading = sensorData[sensorData.length - 1];
+                    document.getElementById('lastUpdated').textContent = 
+                        `Last Updated: ${new Date(latestReading.timestamp).toLocaleTimeString()}`;
+                        
+                    // Make dashboard visible
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('dashboard-container').style.display = 'block';
+                } else {
+                    console.warn('No data found in Supabase');
+                    document.getElementById('error-message').textContent = 'No data found in Supabase database.';
+                    document.getElementById('error-message').style.display = 'block';
+                    document.getElementById('loading').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error fetching data from Supabase:', error);
+                document.getElementById('error-message').textContent = 'Error connecting to Supabase: ' + error.message;
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        
+        // Update the dashboard with the data
+        function updateDashboard(data, isRealData = false) {
+            if (!data || data.length === 0) return;
+            
+            // Get the latest reading
+            const latestReading = Array.isArray(data) ? data[data.length - 1] : data;
+            
+            // Update gauge values
+            updateGaugeValues(latestReading.heartRate, latestReading.spO2);
+            
+            // Update history chart if we have an array of data
+            if (Array.isArray(data)) {
+                updateHistoryChart(data);
+            }
+            
+            // Update timestamp
+            const formattedTime = moment(latestReading.timestamp).format('MMM D, YYYY h:mm:ss A');
+            document.getElementById('lastUpdated').textContent = 'Last Updated: ' + formattedTime;
+        }
+        
+        // Set gauge value function exactly as provided
+        function setGaugeValue(gauge, value) {
+          if (value < 0 || value > 1) {
+            return;
+          }
+
+          gauge.querySelector(".gauge__fill").style.transform = `rotate(${
+            value / 2
+          }turn)`;
+          gauge.querySelector(".gauge__cover").textContent = `${Math.round(
+            value * 100
+          )}%`;
+        }
+        
+        // Adapter function to convert our sensor values to the gauge format
+        function updateGaugeFill(fillId, value, min, max) {
+            const gaugeId = fillId.replace('Fill', 'Gauge');
+            const gauge = document.getElementById(gaugeId);
+            if (!gauge) return;
+            
+            // Ensure value is within range
+            value = Math.max(min, Math.min(max, value));
+            
+            // Calculate the normalized value (0-1)
+            const normalizedValue = (value - min) / (max - min);
+            
+            // Apply the rotation transform (0.25 turn is starting position)
+            gauge.querySelector(".gauge__fill").style.transform = `rotate(${
+                normalizedValue / 2
+            }turn)`;
+            
+            // Update the text content based on gauge type
+            if (fillId === 'heartRateFill') {
+                // For heart rate, show the actual BPM value
+                gauge.querySelector(".gauge__cover").textContent = `${Math.round(value)}`;
+            } else if (fillId === 'spO2Fill') {
+                // For SpO2, show the actual percentage
+                gauge.querySelector(".gauge__cover").textContent = `${Math.round(value)}`;
+            }
+            
+            console.log(`Updated ${fillId} with value: ${value}, normalized: ${normalizedValue}`);
+        }
+        
+        // Update the history chart with new data
+        function updateHistoryChart(data) {
+            if (!historyChart || data.length === 0) return;
+            
+            // Format timestamps for display
+            const labels = data.map(reading => reading.timestamp);
+            
+            // Update chart data
+            historyChart.data.labels = labels;
+            historyChart.data.datasets[0].data = data.map(reading => reading.heartRate);
+            historyChart.data.datasets[1].data = data.map(reading => reading.spO2);
+            
+            // Update the chart
+            historyChart.update();
+        }
+
+        // Initialize everything when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize charts
+            initializeGaugeCharts();
+            initializeHistoryChart();
+
+            // Set up real-time updates
+            setupRealtimeSubscription();
+            
+            // Fetch initial data
+            fetchData();
+
+            // Set up polling for real-time updates every 1 second
+            setInterval(async () => {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('sensor_readings')
+                        .select('*')
+                        .order('timestamp', { ascending: false })
+                        .limit(20);
+                    
+                    if (error) {
+                        throw error;
+                    }
+                    
+                    if (data && data.length > 0) {
+                        // Process the data into the format our dashboard expects
+                        const sensorData = data.map(reading => ({
+                            timestamp: new Date(reading.timestamp || Date.now()),
+                            heartRate: reading.heart_rate,
+                            spO2: reading.spo2
+                        })).sort((a, b) => a.timestamp - b.timestamp);
+                        
+                        // Update the dashboard with the data
+                        updateDashboard(sensorData, true);
+                        
+                        // Update last updated time using the most recent reading
+                        const latestReading = sensorData[sensorData.length - 1];
+                        document.getElementById('lastUpdated').textContent = 
+                            `Last Updated: ${new Date(latestReading.timestamp).toLocaleTimeString()}`;
+                    }
+                } catch (error) {
+                    console.error('Error polling data:', error);
+                }
+            }, 1000); // Poll every 1 second
+
+            // Set up retry mechanism for failed alerts
+            setInterval(retryFailedAlerts, 5 * 60 * 1000); // Retry every 5 minutes
+        });
+    </script>
+</body>
+</html>

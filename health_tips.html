@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DawaTrack - Health Tips & Articles</title>
+    <link rel="icon" type="image/png" href="images/logo.png">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <style>
+        :root {
+            --primary-color-rgb: 52, 152, 219;
+        }
+
+        .health-tips-container {
+            max-width: 1000px;
+            margin: 4rem auto;
+            padding: 0 1rem;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .page-title {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+        }
+
+        @media screen and (max-width: 768px) {
+            .page-title {
+                font-size: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .section-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--primary-color);
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .section-summary {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .section-content {
+            display: none;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .section-content.active {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .tip-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .tip-list li {
+            background: rgba(var(--primary-color-rgb), 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .tip-list li:hover {
+            background: rgba(var(--primary-color-rgb), 0.15);
+        }
+
+        .tip-category {
+            font-weight: 500;
+            color: var(--primary-color);
+            margin-bottom: 0.25rem;
+        }
+
+        .tip-description {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .toggle-icon {
+            color: var(--primary-color);
+            transition: transform 0.3s ease;
+        }
+
+        .section-card.active .toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(var(--primary-color-rgb), 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .home-btn {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            margin: 12px;
+            height: 48px;
+            min-width: 48px;
+            z-index: 1000;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .home-btn i {
+            font-size: 24px;
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <button type="button" class="home-btn" onclick="window.location.href='index.html'" aria-label="Go to home">
+        <i class="fas fa-home" aria-hidden="true"></i>
+    </button>
+
+    <main>
+        <div class="health-tips-container">
+            <h1 class="page-title">Health Tips & Articles</h1>
+            
+            <div class="section-card" onclick="toggleSection('safety')">
+                <div class="section-header">
+                    <h2 class="section-title"><i class="fas fa-shield-alt"></i> Medicine Safety Tips</h2>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <p class="section-summary">Essential guidelines for storing, organizing, and managing your medications safely.</p>
+                <div class="section-content" id="safety-content">
+                    <ul class="tip-list">
+                        <li>
+                            <div class="tip-category">Temperature Control</div>
+                            <div class="tip-description">Store medicines between 15-25°C (59-77°F), away from heat, light, and humidity</div>
+                        </li>
+                        <li>
+                            <div class="tip-category">Proper Storage</div>
+                            <div class="tip-description">Keep original packaging with labels and information leaflets intact. Store in a dedicated, lockable cabinet</div>
+                        </li>
+                        <li>
+                            <div class="tip-category">Organization</div>
+                            <div class="tip-description">Use pill organizers with alarms, maintain an inventory list, and check expiration dates monthly</div>
+                        </li>
+                        <li>
+                            <div class="tip-category">Cross-contamination</div>
+                            <div class="tip-description">Keep different medications separate, never mix in same container. Use clean, dry hands when handling</div>
+                        </li>
+                        <li>
+                            <div class="tip-category">Travel Safety</div>
+                            <div class="tip-description">Carry medicines in hand luggage, keep a list of prescriptions, and bring extra doses for emergencies</div>
+                        </li>
+                        <li>
+                            <div class="tip-category">Emergency Preparedness</div>
+                            <div class="tip-description">Keep emergency contacts updated, including pharmacy and healthcare provider numbers</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section-card" onclick="toggleSection('nutrition')">
+                <div class="section-header">
+                    <h2 class="section-title"><i class="fas fa-utensils"></i> Diet & Nutrition Tips</h2>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <p class="section-summary">Important dietary considerations to maximize medication effectiveness and maintain overall health.</p>
+                <div class="section-content" id="nutrition-content">
+                    <ul class="tip-list">
+                        <li>
+                            <div class="tip-category">Medication Timing</div>
+                            <div class="tip-description">Some medications work best on empty stomach, others with food. Check with your healthcare provider</div>
+                        </li>
+                        <li>
+                            <div class="tip-category">Hydration Impact</div>
+                            <div class="tip-description">Drink 8 glasses of water daily. Proper hydration helps medication absorption and reduces side effects</div>
+                        </li>
+                        <li>
+                            <div class="tip-category">Food Interactions</div>
+                            <div class="tip-description">Avoid grapefruit, high-calcium foods, and caffeine with certain medications. Check specific interactions</div>
+                        </li>
+                        <li>
+                            <div class="tip-category">Nutrient Balance</div>
+                            <div class="tip-description">Include protein, fiber, and vitamins in your diet. Some medications may affect nutrient absorption</div>
+                        </li>
+                        <li>
+                            <div class="tip-category">Supplement Coordination</div>
+                            <div class="tip-description">Space supplements 2-4 hours from medications. Consult healthcare provider about interactions</div>
+                        </li>
+                        <li>
+                            <div class="tip-category">Alcohol Awareness</div>
+                            <div class="tip-description">Many medications interact with alcohol. Always check labels and consult healthcare provider</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section-card" onclick="toggleSection('updates')">
+                <div class="section-header">
+                    <h2 class="section-title"><i class="fas fa-newspaper"></i> Medical Updates</h2>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <p class="section-summary">Latest news and developments in healthcare, medicine, and medical research.</p>
+                <div class="section-content" id="updates-content">
+                    <ul class="tip-list" id="medical-updates">
+                        <li>
+                            <div class="loading"></div>
+                            Loading latest updates...
+                        </li>
+                    </ul>
+                    <p class="update-date">Last updated: <span id="last-update-time">Loading...</span></p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // API Configuration
+        const config = {
+            gnewsApiKey: '77be51f6771bdb3c33200dc764a591fd'
+        };
+
+        let lastFetchTime = 0;
+        const FETCH_COOLDOWN = 300000; // 5 minutes cooldown
+
+        function toggleSection(sectionId) {
+            const content = document.getElementById(`${sectionId}-content`);
+            const card = content.parentElement;
+            const allContents = document.querySelectorAll('.section-content');
+            const allCards = document.querySelectorAll('.section-card');
+            
+            // Close other sections
+            allContents.forEach(item => {
+                if (item !== content) {
+                    item.classList.remove('active');
+                    item.parentElement.classList.remove('active');
+                }
+            });
+
+            // Toggle current section
+            content.classList.toggle('active');
+            card.classList.toggle('active');
+
+            // If opening updates section, fetch news if needed
+            if (sectionId === 'updates' && content.classList.contains('active')) {
+                const now = Date.now();
+                if (now - lastFetchTime > FETCH_COOLDOWN) {
+                    fetchMedicalNews();
+                    lastFetchTime = now;
+                }
+            }
+        }
+
+        async function fetchMedicalNews() {
+            const updatesList = document.getElementById('medical-updates');
+            updatesList.innerHTML = `
+                <li>
+                    <div class="loading"></div>
+                    Loading latest updates...
+                </li>
+            `;
+
+            try {
+                // Using GNews API to fetch latest medical news
+                const response = await fetch(`https://gnews.io/api/v4/search?q=medicine+health&lang=en&country=us&max=5&apikey=${config.gnewsApiKey}`);
+
+                if (!response.ok) throw new Error('Failed to fetch news');
+                
+                const data = await response.json();
+                updatesList.innerHTML = '';
+
+                if (!data.articles || data.articles.length === 0) {
+                    throw new Error('No articles found');
+                }
+
+                data.articles.forEach(article => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <div>
+                            <div class="tip-category">${article.title}</div>
+                            <div class="tip-description">${article.description || 'Click to read more'}</div>
+                            <a href="${article.url}" target="_blank" rel="noopener noreferrer" 
+                               style="color: var(--primary-color); text-decoration: none; font-size: 0.9rem; margin-top: 0.5rem; display: inline-block;">
+                                Read more <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </div>
+                    `;
+                    updatesList.appendChild(li);
+                });
+
+                document.getElementById('last-update-time').textContent = new Date().toLocaleString();
+            } catch (error) {
+                console.error('Error fetching news:', error);
+                updatesList.innerHTML = `
+                    <li>
+                        <div>
+                            <div class="tip-category">Unable to load updates</div>
+                            <div class="tip-description">Please check your internet connection and try again later</div>
+                            <button onclick="fetchMedicalNews()" 
+                                    style="background: var(--primary-color); color: white; border: none; padding: 0.5rem 1rem; 
+                                           border-radius: 4px; margin-top: 0.5rem; cursor: pointer;">
+                                Try Again
+                            </button>
+                        </div>
+                    </li>
+                `;
+            }
+        }
+    </script>
+    <script src="dawadost.js"></script>
+</body>
+</html>
